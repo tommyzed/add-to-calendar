@@ -138,7 +138,10 @@ function App() {
       {!authorized ? (
         <div className="card">
           {isRestoring ? (
-            <div className="loader">Restoring Session...</div>
+            <div className="processing-container">
+              <div className="loader" style={{ width: '24px', height: '24px', borderWidth: '3px' }}></div>
+              <p style={{ margin: 0, fontSize: '0.9em' }}>Restoring Session...</p>
+            </div>
           ) : (
             <button onClick={handleAuth}>Sign In with Google</button>
           )}
@@ -158,8 +161,8 @@ function App() {
 
       {/* Show Loader if processing */}
       {processing && (
-        <div className="card">
-          <div className="loader">Processing...</div>
+        <div className="card processing-container">
+          <div className="loader"></div>
           <p>{status}</p>
         </div>
       )}

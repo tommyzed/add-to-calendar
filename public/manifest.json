@@ -1,6 +1,6 @@
 {
     "name": "Screenshot to Calendar",
-    "short_name": "CalSnap",
+    "short_name": "Add2Cal",
     "start_url": "/",
     "display": "standalone",
     "background_color": "#ffffff",

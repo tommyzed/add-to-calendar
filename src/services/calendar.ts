@@ -19,8 +19,6 @@ const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/
 const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID_HERE';
 
 let tokenClient: google.accounts.oauth2.TokenClient;
-let gapiInited = false;
-let gisInited = false;
 let tokenResolver: ((value: void | PromiseLike<void>) => void) | null = null;
 let tokenRejecter: ((reason?: any) => void) | null = null;
 
@@ -35,8 +33,7 @@ export function initGapi() {
                         // apiKey: API_KEY, // Optional for Calendar if using OAuth token
                         discoveryDocs: [DISCOVERY_DOC],
                     });
-                    gapiInited = true;
-                    if (gisInited) resolve();
+                    resolve();
                 } catch (e) {
                     reject(e);
                 }
@@ -45,6 +42,34 @@ export function initGapi() {
         script.onerror = reject;
         document.body.appendChild(script);
     });
+}
+
+// Token management
+function saveToken(tokenResponse: google.accounts.oauth2.TokenResponse) {
+    const expiresIn = Number(tokenResponse.expires_in);
+    const expiresAt = Date.now() + (expiresIn * 1000);
+    localStorage.setItem('gcal_token', tokenResponse.access_token);
+    localStorage.setItem('gcal_expires_at', expiresAt.toString());
+    console.log('Token saved, expires at', new Date(expiresAt).toLocaleTimeString());
+}
+
+export function loadToken(): boolean {
+    const token = localStorage.getItem('gcal_token');
+    const expiresAt = localStorage.getItem('gcal_expires_at');
+
+    if (token && expiresAt) {
+        if (Date.now() < Number(expiresAt)) {
+            // Token is valid, restore it
+            gapi.client.setToken({ access_token: token });
+            console.log('Restored valid token from storage');
+            return true;
+        } else {
+            console.log('Stored token expired');
+            localStorage.removeItem('gcal_token');
+            localStorage.removeItem('gcal_expires_at');
+        }
+    }
+    return false;
 }
 
 export function initGis() {
@@ -59,12 +84,15 @@ export function initGis() {
                     if (resp.error !== undefined) {
                         if (tokenRejecter) tokenRejecter(resp);
                     } else {
+                        // CRITICAL: Set the token for GAPI to use in requests
+                        gapi.client.setToken(resp);
+                        saveToken(resp); // Save for persistence
+                        console.log('Token set in GAPI', resp); // Debug log
                         if (tokenResolver) tokenResolver();
                     }
                 },
             });
-            gisInited = true;
-            if (gapiInited) resolve();
+            resolve();
         };
         script.onerror = reject;
         document.body.appendChild(script);
@@ -77,9 +105,25 @@ export async function authenticate(silent = false) {
         tokenResolver = resolve;
         tokenRejecter = reject;
 
-        // Request access token
-        // Use 'none' for silent auth to avoid popup if already signed in
-        tokenClient.requestAccessToken({ prompt: silent ? 'none' : '' });
+        try {
+            // Request access token
+            tokenClient.requestAccessToken({ prompt: silent ? 'none' : '' });
+
+            // Add safety timeout for silent auth (sometimes callback doesn't fire)
+            if (silent) {
+                setTimeout(() => {
+                    if (tokenRejecter === reject) { // If still waiting
+                        console.warn('Silent auth timed out');
+                        // Clean up resolvers
+                        tokenResolver = null;
+                        tokenRejecter = null;
+                        reject({ error: 'timeout', message: 'Silent auth timed out' });
+                    }
+                }, 3000); // 3 second timeout
+            }
+        } catch (e) {
+            reject(e);
+        }
     });
 }
 

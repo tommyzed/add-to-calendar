@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import { initGapi, initGis, authenticate, insertEvent } from './services/calendar';
+import { initGapi, initGis, authenticate, insertEvent, loadToken } from './services/calendar';
 import { parseImage } from './services/gemini';
 import confetti from 'canvas-confetti';
 import DatePicker from "react-datepicker";
@@ -12,28 +12,32 @@ function App() {
   const [status, setStatus] = useState<string>('');
   const [eventDetails, setEventDetails] = useState<any>(null);
   const [createdEventLink, setCreatedEventLink] = useState<string | null>(null);
+  const [isRestoring, setIsRestoring] = useState(true); // New state to block UI while checking
 
   useEffect(() => {
+    // Start by assuming we are restoring if the flag exists
+    const hasAuthFlag = localStorage.getItem('gcal_authed') === 'true';
+    setIsRestoring(hasAuthFlag); // If no flag, we are not restoring, effectively.
+
     Promise.all([initGapi(), initGis()])
       .then(() => {
         setStatus('Ready.');
-        // Try silent auth if we believe we are logged in
-        if (localStorage.getItem('gcal_authed') === 'true') {
-          setStatus('Restoring session...');
-          authenticate(true)
-            .then(() => {
-              setAuthorized(true);
-              setStatus('Session restored.');
-            })
-            .catch((e) => {
-              console.log('Silent auth failed', e);
-              // Clear flag if silent auth fails
-              localStorage.removeItem('gcal_authed');
-              setStatus('Please Sign In.');
-            });
+
+        // Check for valid stored token first
+        if (loadToken()) {
+          setAuthorized(true);
+          setStatus('Session restored from storage.');
+          setIsRestoring(false);
+        } else {
+          // Token invalid or missing, ready for fresh login
+          setIsRestoring(false);
+          localStorage.removeItem('gcal_token'); // Clean up just in case
         }
       })
-      .catch(err => setStatus(`Init Error: ${err}`));
+      .catch(err => {
+        setStatus(`Init Error: ${err}`);
+        setIsRestoring(false);
+      });
 
     // Check for share target data
     const urlParams = new URLSearchParams(window.location.search);
@@ -133,7 +137,11 @@ function App() {
 
       {!authorized ? (
         <div className="card">
-          <button onClick={handleAuth}>Sign In with Google</button>
+          {isRestoring ? (
+            <div className="loader">Restoring Session...</div>
+          ) : (
+            <button onClick={handleAuth}>Sign In with Google</button>
+          )}
         </div>
       ) : (
         <p className="connected-badge">Connected ✅</p>

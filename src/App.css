@@ -38,6 +38,18 @@
   border-color: rgba(255, 255, 255, 0.4);
 }
 
+.card.warning-card {
+  padding: 0.8em 1.2em;
+  display: inline-block;
+  min-width: unset;
+  margin-bottom: 1em;
+}
+
+.warning-card p {
+  margin: 0;
+  font-size: 0.9em;
+}
+
 .success-text {
   color: #a7f3d0;
   font-weight: bold;

@@ -89,7 +89,7 @@ function App() {
       if (details.error && details.error !== 'none') {
         if (details.error === 'UNABLE_TO_DETERMINE') {
           // Warn user but allow manual entry
-          setStatus('⚠️: Are you sure it is an event? Please verify details.');
+          setStatus('🧙 The AI elves could not determine the event details. 🧙');
           // Ensure we have at least empty structure
           setEventDetails({
             summary: details.summary || '',
@@ -201,8 +201,8 @@ function App() {
       )}
 
       {/* Show Warning if any */}
-      {status.startsWith('Warning') && (
-        <div className="card" style={{ borderColor: '#fca5a5', backgroundColor: 'rgba(255, 166, 0, 0.15)' }}>
+      {(status.startsWith('Warning') || status.startsWith('🧙')) && (
+        <div className="card warning-card" style={{ borderColor: '#fca5a5', backgroundColor: 'rgba(255, 166, 0, 0.15)' }}>
           <p style={{ color: '#fbbf24', fontWeight: 'bold' }}>{status}</p>
         </div>
       )}

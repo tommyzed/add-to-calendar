@@ -58,6 +58,13 @@ function App() {
           const blob = await response.blob();
           const file = new File([blob], "shared_image.png", { type: blob.type });
           processFile(file);
+
+          // Clean up cache to prevent reprocessing on reload
+          await cache.delete('shared-file');
+
+          // Clean up URL to prevent triggering again
+          const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+          window.history.replaceState({ path: newUrl }, '', newUrl);
         } else {
           setStatus('No shared file found in cache.');
         }

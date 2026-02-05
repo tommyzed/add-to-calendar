@@ -7,11 +7,12 @@ Built with **React**, **TypeScript**, and **Vite**, featuring a modern **Glassmo
 ## 🌐 Demo
 
 [**Try the App Live**](https://add-to-calendar-production.up.railway.app/)
-_(message me to be allowlisted)_
+
+_(NOTE: message me to be allowlisted)_
 
 ## ✨ Features
 
-- **AI-Powered Extraction**: Uses Gemini 1.5 Flash to intelligently parse event titles, dates, times, and locations from images.
+- **AI-Powered Extraction**: Uses Gemini 3 Flash to intelligently parse event titles, dates, times, and locations from images.
 - **Seamless Google Calendar Integration**:
   - **Persistent Authentication**: Stays logged in so you don't have to sign in every time.
   - **Direct Insertion**: Adds events directly to your primary calendar.

@@ -89,7 +89,7 @@ function App() {
       if (details.error && details.error !== 'none') {
         if (details.error === 'UNABLE_TO_DETERMINE') {
           // Warn user but allow manual entry
-          setStatus('🧙 The AI elves could not determine the event details. 🧙');
+          setStatus('🧙 The AI elves are confused. Please review. 🧙');
           // Ensure we have at least empty structure
           setEventDetails({
             summary: details.summary || '',

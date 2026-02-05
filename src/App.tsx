@@ -84,13 +84,30 @@ function App() {
     try {
       const details = await parseImage(file);
       console.log('Parsed:', details);
+      console.log('Parsed:', details);
+
       if (details.error && details.error !== 'none') {
-        setStatus(`Could not find event: ${details.error}`);
-        setProcessing(false);
-        return;
+        if (details.error === 'UNABLE_TO_DETERMINE') {
+          // Warn user but allow manual entry
+          setStatus('⚠️: Are you sure it is an event? Please verify details.');
+          // Ensure we have at least empty structure
+          setEventDetails({
+            summary: details.summary || '',
+            location: details.location || '',
+            start_datetime: details.start_datetime || new Date().toISOString(),
+            end_datetime: details.end_datetime || new Date(Date.now() + 3600000).toISOString(),
+            description: details.description || ''
+          });
+        } else {
+          // Hard error
+          setStatus(`Could not find event: ${details.error}`);
+          setProcessing(false);
+          return;
+        }
+      } else {
+        setEventDetails(details);
+        setStatus('Event parsed! Confirm to add.');
       }
-      setEventDetails(details);
-      setStatus('Event parsed! Confirm to add.');
     } catch (e: any) {
       setStatus(`Error parsing: ${e.message}`);
     } finally {
@@ -158,6 +175,14 @@ function App() {
           <p style={{ color: '#ff6b6b', fontWeight: 'bold' }}>{status}</p>
         </div>
       )}
+
+      {/* Show Warning if any */}
+      {status.startsWith('Warning') && (
+        <div className="card" style={{ borderColor: '#fca5a5', backgroundColor: 'rgba(255, 166, 0, 0.15)' }}>
+          <p style={{ color: '#fbbf24', fontWeight: 'bold' }}>{status}</p>
+        </div>
+      )}
+
 
       {/* Show Loader if processing */}
       {processing && (

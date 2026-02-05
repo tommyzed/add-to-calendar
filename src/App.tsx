@@ -194,7 +194,7 @@ function App() {
 
       {authorized && !processing && !eventDetails && (
         <div className="card">
-          <p style={{ marginBottom: '1.5em', fontSize: '1.1em' }}>Select a screenshot to create an event</p>
+          <p style={{ marginBottom: '1.5em', fontSize: '1.1em' }}>Select a screenshot to create an event in Google Calendar.</p>
           <label className="file-upload-label">
             <input type="file" accept="image/*" onChange={onFileSelect} style={{ display: 'none' }} />
             <span className="upload-btn">Choose Image</span>

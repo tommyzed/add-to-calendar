@@ -34,18 +34,19 @@ function App() {
           setIsRestoring(false);
           localStorage.removeItem('gcal_token'); // Clean up just in case
         }
+
+        // Check for share target data AFTER init is done to avoid status race conditions
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('shared') === 'true') {
+          // This will overwrite "Session restored" immediately if present, which is desired.
+          setStatus('Shared content received. Checking...');
+          handleSharedContent();
+        }
       })
       .catch(err => {
         setStatus(`Init Error: ${err}`);
         setIsRestoring(false);
       });
-
-    // Check for share target data
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('shared') === 'true') {
-      setStatus('Shared content received. Checking...');
-      handleSharedContent();
-    }
   }, []);
 
   const handleSharedContent = async () => {

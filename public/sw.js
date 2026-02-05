@@ -1,5 +1,5 @@
 
-// Service Worker for Screenshot to Calendar PWA
+// Service Worker for Screenshot 👉 Calendar PWA
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();

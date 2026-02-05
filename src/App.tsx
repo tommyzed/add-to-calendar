@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import './App.css'
-import { initGapi, initGis, authenticate, insertEvent, loadToken } from './services/calendar';
+import { initGapi, initGis, authenticate, insertEvent, loadToken, signOut } from './services/calendar';
 import { parseImage } from './services/gemini';
 import confetti from 'canvas-confetti';
 import DatePicker from "react-datepicker";
@@ -12,7 +12,8 @@ function App() {
   const [status, setStatus] = useState<string>('');
   const [eventDetails, setEventDetails] = useState<any>(null);
   const [createdEventLink, setCreatedEventLink] = useState<string | null>(null);
-  const [isRestoring, setIsRestoring] = useState(true); // New state to block UI while checking
+  const [isRestoring, setIsRestoring] = useState(true);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
   useEffect(() => {
     // Start by assuming we are restoring if the flag exists
@@ -84,7 +85,6 @@ function App() {
     try {
       const details = await parseImage(file);
       console.log('Parsed:', details);
-      console.log('Parsed:', details);
 
       if (details.error && details.error !== 'none') {
         if (details.error === 'UNABLE_TO_DETERMINE') {
@@ -148,9 +148,37 @@ function App() {
     }
   }
 
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
+    signOut();
+    setAuthorized(false);
+    setEventDetails(null);
+    setCreatedEventLink(null);
+    setShowLogoutConfirm(false);
+    setStatus('');
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutConfirm(false);
+  };
+
   return (
     <div className="container">
-      <h1>Screenshot to Calendar</h1>
+      <h1>Screenshot 👉 Calendar</h1>
+
+      <div className="header-actions">
+        <a href="https://ko-fi.com/egodevnull" target="_blank" rel="noopener noreferrer" className="coffee-link">
+          Buy me a ☕️
+        </a>
+        {authorized && (
+          <button className="connected-badge logout-btn" onClick={handleLogoutClick} title="Click to Sign Out">
+            Connected ✅
+          </button>
+        )}
+      </div>
 
       {!authorized ? (
         <div className="card">
@@ -163,11 +191,7 @@ function App() {
             <button onClick={handleAuth}>Sign In with Google</button>
           )}
         </div>
-      ) : (
-        <p className="connected-badge">Connected ✅</p>
-      )}
-
-      {/* Status Card Removed */}
+      ) : null}
 
       {/* Show Error if any */}
       {status.startsWith('Error') && (
@@ -282,6 +306,19 @@ function App() {
                 <button onClick={handleConfirm} disabled={processing}>Add to Calendar</button>
               </>
             )}
+          </div>
+        </div>
+      )}
+
+      {showLogoutConfirm && (
+        <div className="modal-overlay">
+          <div className="card modal-card">
+            <h3>Sign Out?</h3>
+            <p>Are you sure you want to disconnect your Google Calendar?</p>
+            <div className="actions">
+              <button onClick={cancelLogout}>Cancel</button>
+              <button onClick={confirmLogout} style={{ background: 'linear-gradient(90deg, #ff6b6b 0%, #ff8e8e 100%)', color: 'white' }}>Sign Out</button>
+            </div>
           </div>
         </div>
       )}

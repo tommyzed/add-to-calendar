@@ -1,8 +1,13 @@
-# Screenshot to Calendar PWA
+# Screenshot 👉 Calendar
 
 A Progressive Web App (PWA) that uses **Google Gemini AI** to extract event details from screenshots (or any image) and adds them directly to your **Google Calendar**.
 
 Built with **React**, **TypeScript**, and **Vite**, featuring a modern **Glassmorphism UI** and seamless PWA integration.
+
+## 🌐 Demo
+
+[**Try the App Live**](https://add-to-calendar-production.up.railway.app/)
+_(message me to be allowlisted)_
 
 ## ✨ Features
 
@@ -15,7 +20,7 @@ Built with **React**, **TypeScript**, and **Vite**, featuring a modern **Glassmo
   - **Glassmorphism Design**: Sleek, dark-mode-inspired UI with blur effects and gradients.
   - **Editable Details**: Review and modify the event summary, location, and start/end times before adding.
   - **Custom Date Picker**: Fully styled, modern date/time picker for easy adjustments.
-  - **Smart Feedback**: Confetti animations on success and inline error handling.
+  - **Smart Feedback**: Confetti animations on success, inline error handling, and graceful warnings for unclear images (allowing manual entry).
 - **PWA Capabilities**:
   - **Installable**: Can be installed on mobile and desktop.
   - **Share Target**: Receive images directly from the Android System Share Sheet (e.g., share a screenshot from Google Photos directly to this app).
@@ -66,7 +71,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 1.  **Sign In**: Click "Sign In with Google" to authorize Calendar access (only needed once).
 2.  **Add an Image**:
     *   **Desktop/Mobile Web**: Click "Choose Image" to select a screenshot.
-    *   **Android (PWA)**: Open an image in your gallery -> Share -> Select "Screenshot to Calendar".
+    *   **Android (PWA)**: Open an image in your gallery -> Share -> Select "Screenshot 👉 Calendar".
 3.  **Review & Edit**: The AI will populate the event details.
     *   Use the **Date Pickers** to adjust times if needed.
     *   Edit the **Name** or **Location**.

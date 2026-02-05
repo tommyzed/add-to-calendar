@@ -72,6 +72,15 @@ export function loadToken(): boolean {
     return false;
 }
 
+export function signOut() {
+    localStorage.removeItem('gcal_token');
+    localStorage.removeItem('gcal_expires_at');
+    localStorage.removeItem('gcal_authed');
+    // Clear GAPI token
+    gapi.client.setToken(null);
+    console.log('User signed out, tokens cleared.');
+}
+
 export function initGis() {
     return new Promise<void>((resolve, reject) => {
         const script = document.createElement('script');
@@ -134,7 +143,7 @@ export async function insertEvent(eventData: any) {
         const event = {
             summary: eventData.summary,
             location: eventData.location,
-            description: eventData.description || 'Added via Screenshot to Calendar PWA',
+            description: eventData.description || 'Added via Screenshot 👉 Calendar PWA',
             start: {
                 dateTime: eventData.start_datetime,
                 timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,

@@ -25,14 +25,34 @@ function App() {
         setStatus('Ready.');
 
         // Check for valid stored token first
+        // Check for valid stored token first
         if (loadToken()) {
           setAuthorized(true);
           setStatus('Session restored from storage.');
           setIsRestoring(false);
         } else {
-          // Token invalid or missing, ready for fresh login
-          setIsRestoring(false);
-          localStorage.removeItem('gcal_token'); // Clean up just in case
+          // Token invalid or missing.
+          // IF we were previously authorized, try to silently refresh.
+          const wasAuthed = localStorage.getItem('gcal_authed') === 'true';
+          if (wasAuthed) {
+            setStatus('Refreshing session...');
+            authenticate(true) // silent = true
+              .then(() => {
+                setAuthorized(true);
+                setStatus('Session refreshed.');
+                setIsRestoring(false);
+              })
+              .catch((err) => {
+                console.warn('Silent refresh failed:', err);
+                // Failed to refresh (maybe revoked, or cookies cleared)
+                setAuthorized(false);
+                setIsRestoring(false);
+                localStorage.removeItem('gcal_authed'); // Stop trying next time
+              });
+          } else {
+            // No previous session, ready for fresh login
+            setIsRestoring(false);
+          }
         }
 
         // Check for share target data AFTER init is done to avoid status race conditions

@@ -9,7 +9,10 @@
 
 @media (max-width: 600px) {
   #root {
-    padding: 1rem;
+    padding: 3rem 1rem 4rem 1rem;
+    /* Increased top padding per user request */
+    width: 100%;
+    margin-top: 0;
   }
 }
 

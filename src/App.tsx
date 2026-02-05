@@ -173,7 +173,12 @@ function App() {
 
   return (
     <div className="container">
-      <h1>Screenshot 👉 Calendar</h1>
+      <div className="banner">
+        <h1 className="title">
+          <span className="screenshot">Screenshot 👉 Calendar</span>
+        </h1>
+        <p className="tagline">Turn screenshots into scheduled events instantly</p>
+      </div>
 
       <div className="header-actions">
         <a href="https://ko-fi.com/egodevnull" target="_blank" rel="noopener noreferrer" className="coffee-link">

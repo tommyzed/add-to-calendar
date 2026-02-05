@@ -5,14 +5,14 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.95);
-  
+
   /* Modern Gradient Background */
   --bg-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   --card-bg: rgba(255, 255, 255, 0.1);
   --card-border: rgba(255, 255, 255, 0.2);
   --primary-color: #ffffff;
   --text-color: #ffffff;
-  
+
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -25,6 +25,7 @@ body {
   place-items: center;
   min-width: 320px;
   min-height: 100vh;
+  min-height: 100dvh;
   background-image: var(--bg-gradient);
   background-attachment: fixed;
   background-size: cover;
@@ -36,7 +37,7 @@ h1 {
   line-height: 1.1;
   margin-bottom: 0.5em;
   font-weight: 800;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
 }
 
 button {
@@ -50,12 +51,12 @@ button {
   color: #764ba2;
   cursor: pointer;
   transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
 button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 12px rgba(0,0,0,0.15);
+  box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
   background-color: #f0f0f0;
 }
 

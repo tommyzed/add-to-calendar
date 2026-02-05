@@ -166,6 +166,11 @@ function App() {
     setShowLogoutConfirm(false);
   };
 
+  const handleCancel = () => {
+    setEventDetails(null);
+    setStatus('Ready for next.');
+  };
+
   return (
     <div className="container">
       <h1>Screenshot 👉 Calendar</h1>
@@ -303,7 +308,7 @@ function App() {
               </div>
             ) : (
               <>
-                <button onClick={() => setEventDetails(null)}>Cancel</button>
+                <button onClick={handleCancel}>Cancel</button>
                 <button onClick={handleConfirm} disabled={processing}>Add to Calendar</button>
               </>
             )}

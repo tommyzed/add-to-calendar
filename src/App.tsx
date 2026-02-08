@@ -26,34 +26,31 @@ function App() {
 
         // Check for valid stored token first
         // Check for valid stored token first
-        if (loadToken()) {
-          setAuthorized(true);
-          setStatus('Session restored from storage.');
-          setIsRestoring(false);
-        } else {
-          // Token invalid or missing.
-          // IF we were previously authorized, try to silently refresh.
-          const wasAuthed = localStorage.getItem('gcal_authed') === 'true';
-          if (wasAuthed) {
-            setStatus('Refreshing session...');
-            authenticate(true) // silent = true
-              .then(() => {
-                setAuthorized(true);
-                setStatus('Session refreshed.');
-                setIsRestoring(false);
-              })
-              .catch((err) => {
-                console.warn('Silent refresh failed:', err);
-                // Failed to refresh (maybe revoked, or cookies cleared)
-                setAuthorized(false);
-                setIsRestoring(false);
-                localStorage.removeItem('gcal_authed'); // Stop trying next time
-              });
-          } else {
-            // No previous session, ready for fresh login
+        loadToken().then((isValid) => {
+          if (isValid) {
+            setAuthorized(true);
+            setStatus('Session restored from storage.');
             setIsRestoring(false);
+          } else {
+            // Token invalid or missing.
+            // IF we were previously authorized, try to silently refresh.
+            const wasAuthed = localStorage.getItem('gcal_authed') === 'true';
+            if (wasAuthed) {
+              setStatus('Refreshing session...');
+              // Attempt restore which might have failed above due to race, or just try auth
+              // Actually, loadToken() already attempts refresh if refresh token exists.
+              // If it returned false, it means refresh failed or no tokens.
+
+              // If we want to force re-auth flow or just show login button:
+              setAuthorized(false);
+              setIsRestoring(false);
+              // We don't auto-call authenticate() anymore as it opens popup
+            } else {
+              // No previous session, ready for fresh login
+              setIsRestoring(false);
+            }
           }
-        }
+        });
 
         // Check for share target data AFTER init is done to avoid status race conditions
         const urlParams = new URLSearchParams(window.location.search);
@@ -97,7 +94,7 @@ function App() {
 
   const handleAuth = async () => {
     try {
-      await authenticate(false);
+      await authenticate();
       setAuthorized(true);
       localStorage.setItem('gcal_authed', 'true');
       setStatus('Authorized!');

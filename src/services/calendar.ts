@@ -8,17 +8,18 @@
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
 
-// We need a Google Client ID. Usually this is also an env var, but for this bootstrap we might need to ask user or hardcode a placeholder.
-// The user said "use values in .env", but only shared GEMINI ones.
-// I'll assume REACT_APP_GOOGLE_CLIENT_ID or VITE_GOOGLE_CLIENT_ID will be added later.
-// For now, I'll put a placeholder string and ask user to fill it.
+// Environment variables
+// Note: In Vite, process.env is usually replaced by import.meta.env, but we stick to the existing pattern if it works.
+// However, standard Vite only exposes VITE_* vars. If these are not starting with VITE_, they might be replaced by a plugin.
+// Given the previous file used process.env.GOOGLE_CLIENT_ID, we'll try to support both or fallback.
+const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
-// WAIT, user didn't give Google Client ID variable name.
-// I will check if I can use a generic one or if I should add it to env.d.ts and use process.env.GOOGLE_CLIENT_ID
+// Use proxy in development to avoid CORS
+const AUTH_BRIDGE_URL = import.meta.env.DEV
+    ? '/api/auth'
+    : (process.env.AUTH_BRIDGE_URL || import.meta.env.VITE_AUTH_BRIDGE_URL || 'https://auth-bridge-785229654842.europe-west1.run.app');
 
-const CLIENT_ID = process.env.GOOGLE_CLIENT_ID || 'YOUR_CLIENT_ID_HERE';
-
-let tokenClient: google.accounts.oauth2.TokenClient;
+let codeClient: google.accounts.oauth2.CodeClient;
 let tokenResolver: ((value: void | PromiseLike<void>) => void) | null = null;
 let tokenRejecter: ((reason?: any) => void) | null = null;
 
@@ -30,7 +31,6 @@ export function initGapi() {
             gapi.load('client', async () => {
                 try {
                     await gapi.client.init({
-                        // apiKey: API_KEY, // Optional for Calendar if using OAuth token
                         discoveryDocs: [DISCOVERY_DOC],
                     });
                     resolve();
@@ -45,17 +45,114 @@ export function initGapi() {
 }
 
 // Token management
-function saveToken(tokenResponse: google.accounts.oauth2.TokenResponse) {
-    const expiresIn = Number(tokenResponse.expires_in);
-    const expiresAt = Date.now() + (expiresIn * 1000);
-    localStorage.setItem('gcal_token', tokenResponse.access_token);
+function saveTokens(access_token: string, expiry_date?: number, expires_in?: number, refresh_token?: string) {
+    let expiresAt = 0;
+    if (expiry_date) {
+        expiresAt = expiry_date;
+    } else if (expires_in) {
+        expiresAt = Date.now() + (expires_in * 1000);
+    } else {
+        // Fallback default 1 hour
+        expiresAt = Date.now() + 3600 * 1000;
+    }
+
+    localStorage.setItem('gcal_access_token', access_token);
     localStorage.setItem('gcal_expires_at', expiresAt.toString());
-    console.log('Token saved, expires at', new Date(expiresAt).toLocaleTimeString());
+
+    if (refresh_token) {
+        localStorage.setItem('gcal_refresh_token', refresh_token);
+    }
+    console.log('Tokens saved. Expires at', new Date(expiresAt).toLocaleTimeString());
 }
 
-export function loadToken(): boolean {
-    const token = localStorage.getItem('gcal_token');
+async function exchangeCodeForToken(code: string) {
+    try {
+        console.log('Exchanging code with Bridge:', AUTH_BRIDGE_URL);
+        console.log('Using Client ID:', CLIENT_ID); // Verify this matches Cloud Function's CLIENT_ID
+        // console.log('Code:', code); // Don't log full code in prod, but helpful for debug
+
+        const response = await fetch(AUTH_BRIDGE_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            // Added 'action' field based on "Invalid Action" error
+            body: JSON.stringify({ action: 'exchange', code }),
+        });
+
+        if (!response.ok) {
+            const text = await response.text();
+            try {
+                const error = JSON.parse(text);
+                throw new Error(error.message || 'Failed to exchange code');
+            } catch (e) {
+                throw new Error(`Server Error: ${text}`);
+            }
+        }
+
+        const data = await response.json();
+        // data should contain: access_token, expires_in, refresh_token, scope, token_type
+
+        gapi.client.setToken({ access_token: data.access_token });
+        // Server returns expiry_date (ms)
+        saveTokens(data.access_token, data.expiry_date, data.expires_in, data.refresh_token);
+
+        return data;
+    } catch (error) {
+        console.error('Error exchanging code for token:', error);
+        throw error;
+    }
+}
+
+async function refreshAccessToken() {
+    const refresh_token = localStorage.getItem('gcal_refresh_token');
+    if (!refresh_token) {
+        throw new Error('No refresh token available');
+    }
+
+    try {
+        console.log('Attempting to refresh access token...');
+        const response = await fetch(AUTH_BRIDGE_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            // Added 'action' field
+            body: JSON.stringify({ action: 'refresh', refresh_token }),
+        });
+
+        if (!response.ok) {
+            // If refresh fails (e.g., revoked), clear everything
+            if (response.status === 400 || response.status === 401) {
+                signOut();
+            }
+            const text = await response.text();
+            try {
+                const error = JSON.parse(text);
+                throw new Error(error.message || 'Failed to refresh token');
+            } catch (e) {
+                throw new Error(`Server Error: ${text}`);
+            }
+        }
+
+        const data = await response.json();
+        // data should contain: access_token, expires_in (and maybe validation info)
+
+        gapi.client.setToken({ access_token: data.access_token });
+        // Update access token and expiry, keep existing refresh token
+        saveTokens(data.access_token, data.expiry_date, data.expires_in);
+
+        return data.access_token;
+    } catch (error) {
+        console.error('Error refreshing token:', error);
+        throw error;
+    }
+}
+
+export async function loadToken(): Promise<boolean> {
+    const token = localStorage.getItem('gcal_access_token');
     const expiresAt = localStorage.getItem('gcal_expires_at');
+    const refreshToken = localStorage.getItem('gcal_refresh_token');
 
     if (token && expiresAt) {
         if (Date.now() < Number(expiresAt)) {
@@ -63,19 +160,36 @@ export function loadToken(): boolean {
             gapi.client.setToken({ access_token: token });
             console.log('Restored valid token from storage');
             return true;
+        } else if (refreshToken) {
+            // Token expired but we have refresh token
+            console.log('Token expired, attempting refresh...');
+            try {
+                await refreshAccessToken();
+                return true;
+            } catch (e) {
+                console.warn('Silent refresh failed', e);
+                return false;
+            }
         } else {
-            console.log('Stored token expired');
-            localStorage.removeItem('gcal_token');
-            localStorage.removeItem('gcal_expires_at');
+            console.log('Stored token expired and no refresh token');
+            signOut();
+        }
+    } else if (refreshToken) {
+        // No access token but have refresh token (unlikely but possible)
+        try {
+            await refreshAccessToken();
+            return true;
+        } catch (e) {
+            return false;
         }
     }
     return false;
 }
 
 export function signOut() {
-    localStorage.removeItem('gcal_token');
+    localStorage.removeItem('gcal_access_token');
     localStorage.removeItem('gcal_expires_at');
-    localStorage.removeItem('gcal_authed');
+    localStorage.removeItem('gcal_refresh_token');
     // Clear GAPI token
     gapi.client.setToken(null);
     console.log('User signed out, tokens cleared.');
@@ -86,19 +200,24 @@ export function initGis() {
         const script = document.createElement('script');
         script.src = 'https://accounts.google.com/gsi/client';
         script.onload = () => {
-            tokenClient = google.accounts.oauth2.initTokenClient({
+            codeClient = google.accounts.oauth2.initCodeClient({
                 client_id: CLIENT_ID,
                 scope: SCOPES,
-                callback: (resp: google.accounts.oauth2.TokenResponse) => {
-                    if (resp.error !== undefined) {
+                ux_mode: 'popup',
+                callback: (resp: google.accounts.oauth2.CodeResponse) => {
+                    if (resp.error) {
                         if (tokenRejecter) tokenRejecter(resp);
-                    } else {
-                        // CRITICAL: Set the token for GAPI to use in requests
-                        gapi.client.setToken(resp);
-                        saveToken(resp); // Save for persistence
-                        console.log('Token set in GAPI', resp); // Debug log
-                        if (tokenResolver) tokenResolver();
+                        return;
                     }
+
+                    // Exchange code for code
+                    exchangeCodeForToken(resp.code)
+                        .then(() => {
+                            if (tokenResolver) tokenResolver();
+                        })
+                        .catch((err) => {
+                            if (tokenRejecter) tokenRejecter(err);
+                        });
                 },
             });
             resolve();
@@ -108,28 +227,16 @@ export function initGis() {
     });
 }
 
-export async function authenticate(silent = false) {
+export async function authenticate() {
     return new Promise<void>((resolve, reject) => {
-        if (!tokenClient) return reject('GIS not initialized');
+        if (!codeClient) return reject('GIS not initialized');
         tokenResolver = resolve;
         tokenRejecter = reject;
 
         try {
-            // Request access token
-            tokenClient.requestAccessToken({ prompt: silent ? 'none' : '' });
-
-            // Add safety timeout for silent auth (sometimes callback doesn't fire)
-            if (silent) {
-                setTimeout(() => {
-                    if (tokenRejecter === reject) { // If still waiting
-                        console.warn('Silent auth timed out');
-                        // Clean up resolvers
-                        tokenResolver = null;
-                        tokenRejecter = null;
-                        reject({ error: 'timeout', message: 'Silent auth timed out' });
-                    }
-                }, 3000); // 3 second timeout
-            }
+            // Request auth code (offline access for refresh token)
+            // Note: select_account allows user to switch accounts if needed
+            codeClient.requestCode();
         } catch (e) {
             reject(e);
         }
@@ -137,9 +244,13 @@ export async function authenticate(silent = false) {
 }
 
 export async function insertEvent(eventData: any) {
-    // Ensure auth
-    // Note: gapi.client.calendar.events.insert
     try {
+        // Double check token validity before request
+        const isAuth = await loadToken();
+        if (!isAuth) {
+            throw new Error("Not authenticated");
+        }
+
         const event = {
             summary: eventData.summary,
             location: eventData.location,
@@ -161,8 +272,12 @@ export async function insertEvent(eventData: any) {
 
         const response = await request;
         return response.result;
-    } catch (err) {
+    } catch (err: any) {
         console.error("Error inserting event", err);
+        // If 401, maybe token expired during use? Try one retry if we wanted to be robust
+        if (err.result && err.result.error && err.result.error.code === 401) {
+            // Could trigger refresh here and retry, but simpler to rely on loadToken checks for now
+        }
         throw err;
     }
 }

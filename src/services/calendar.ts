@@ -254,7 +254,7 @@ export async function insertEvent(eventData: any) {
         const event = {
             summary: eventData.summary,
             location: eventData.location,
-            description: eventData.description || 'Added via Screenshot 👉 Calendar PWA',
+            description: (eventData.description ? eventData.description + "\n\n" : "") + "💫✨ Imported by Screenshot 👉 Calendar.",
             start: {
                 dateTime: eventData.start_datetime,
                 timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,

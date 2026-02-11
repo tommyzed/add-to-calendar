@@ -22,21 +22,32 @@ function App() {
 
     Promise.all([initGapi(), initGis()])
       .then(() => {
-        setStatus('Ready.');
+        // Check for share target data first to set correct initial status if needed
+        const urlParams = new URLSearchParams(window.location.search);
+        const isSharing = urlParams.get('shared') === 'true';
 
-        // Check for valid stored token first
+        if (isSharing) {
+          setStatus('Shared content received. Processing...');
+          handleSharedContent();
+        } else {
+          setStatus('Ready.');
+        }
+
         // Check for valid stored token first
         loadToken().then((isValid) => {
           if (isValid) {
             setAuthorized(true);
-            setStatus('Session restored from storage.');
+            // Only update status if NOT sharing, to avoid overwriting "Analyzing..."
+            if (!isSharing) {
+              setStatus('Session restored from storage.');
+            }
             setIsRestoring(false);
           } else {
             // Token invalid or missing.
             // IF we were previously authorized, try to silently refresh.
             const wasAuthed = localStorage.getItem('gcal_authed') === 'true';
             if (wasAuthed) {
-              setStatus('Refreshing session...');
+              if (!isSharing) setStatus('Refreshing session...');
               // Attempt restore which might have failed above due to race, or just try auth
               // Actually, loadToken() already attempts refresh if refresh token exists.
               // If it returned false, it means refresh failed or no tokens.
@@ -44,21 +55,12 @@ function App() {
               // If we want to force re-auth flow or just show login button:
               setAuthorized(false);
               setIsRestoring(false);
-              // We don't auto-call authenticate() anymore as it opens popup
             } else {
               // No previous session, ready for fresh login
               setIsRestoring(false);
             }
           }
         });
-
-        // Check for share target data AFTER init is done to avoid status race conditions
-        const urlParams = new URLSearchParams(window.location.search);
-        if (urlParams.get('shared') === 'true') {
-          // This will overwrite "Session restored" immediately if present, which is desired.
-          setStatus('Shared content received. Checking...');
-          handleSharedContent();
-        }
       })
       .catch(err => {
         setStatus(`Init Error: ${err}`);
@@ -215,7 +217,7 @@ function App() {
         )}
       </div>
 
-      {!authorized ? (
+      {!authorized && !processing ? (
         <div className="card">
           {isRestoring ? (
             <div className="processing-container">
@@ -247,7 +249,7 @@ function App() {
       {processing && (
         <div className="card processing-container">
           <div className="loader"></div>
-          <p>{status}</p>
+          <p>{isRestoring ? 'Restoring Session & Analyzing...' : status}</p>
         </div>
       )}
 

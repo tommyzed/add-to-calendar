@@ -414,8 +414,7 @@ input[type="file"] {
 
 /* Banner & Title Styles */
 .banner {
-  padding: 10px 10px 20px 10px;
-  /* Reduced top padding since app header has spacing */
+  padding: 10px 10px 0px 10px;
   text-align: center;
   max-width: 100%;
 }
@@ -447,6 +446,7 @@ input[type="file"] {
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5);
   color: rgba(255, 255, 255, 0.9);
   /* Overriding grey for better visibility on this app's bg */
+  margin-bottom: 0;
 }
 
 @keyframes fadeInUp {
@@ -463,6 +463,6 @@ input[type="file"] {
 
 @media (max-width: 768px) {
   .banner {
-    padding: 20px 0;
+    padding: 5px 0;
   }
 }

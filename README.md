@@ -14,7 +14,7 @@ _(NOTE: message me to be allowlisted)_
 
 ## ✨ Features
 
-- **AI-Powered Extraction**: Uses Gemini 3 Flash to intelligently parse event titles, dates, times, and locations from images.
+- **AI-Powered Extraction**: Uses Gemini 3.1 Pro to intelligently parse event titles, dates, times, and locations from images.
 - **Seamless Google Calendar Integration**:
   - **Persistent Authentication**: Stays logged in so you don't have to sign in every time.
   - **Direct Insertion**: Adds events directly to your primary calendar.
@@ -50,16 +50,16 @@ Create a `.env` file in the root directory:
 
 ```env
 # Your Google Gemini API Key
-VITE_GEMINI_APP_KEY=your_gemini_api_key
+GEMINI_APP_KEY=your_gemini_api_key
 
-# The Gemini Model to use (default: gemini-1.5-flash)
-VITE_GEMINI_MODEL=gemini-1.5-flash
+# The Gemini Model to use
+GEMINI_MODEL=gemini-3-flash-preview
 
 # Your Google OAuth 2.0 Client ID (for Calendar access)
-VITE_GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
 ```
 
-> **Note**: For `VITE_GOOGLE_CLIENT_ID`, ensure your Google Cloud Console "Authorized JavaScript origins" includes `http://localhost:5173` (for dev) and your production URL.
+> **Note**: For `GOOGLE_CLIENT_ID`, ensure your Google Cloud Console "Authorized JavaScript origins" includes `http://localhost:5173` (for dev) and your production URL.
 
 ### 3. Run Locally
 

@@ -22,8 +22,9 @@ _(NOTE: message me to be allowlisted)_
 - **Modern User Experience**:
   - **Glassmorphism Design**: Sleek, dark-mode-inspired UI with blur effects and gradients.
   - **Editable Details**: Review and modify the event summary, location, and start/end times before adding.
-  - **Custom Date Picker**: Fully styled, modern date/time picker for easy adjustments.
-  - **Smart Feedback**: Confetti animations on success, inline error handling, and graceful warnings for unclear images (allowing manual entry).
+  - **Manual Entry**: Click the link to bypass image uploading entirely and create events manually!
+  - **Custom Date Picker**: Fully styled, modern `@mui/x-date-pickers` for responsive, intuitive time adjustments.
+  - **Smart Feedback**: Confetti animations on success, inline error handling, and graceful warnings for unclear images.
 - **PWA Capabilities**:
   - **Installable**: Can be installed on mobile and desktop.
   - **Share Target**: Receive images directly from the Android System Share Sheet (e.g., share a screenshot from Google Photos directly to this app).
@@ -72,8 +73,8 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 ## 📱 How to Use
 
 1.  **Sign In**: Click "Sign In with Google" to authorize Calendar access (only needed once).
-2.  **Add an Image**:
-    *   **Desktop/Mobile Web**: Click "Choose Image" to select a screenshot.
+2.  **Add an Image or Enter Manually**:
+    *   **Desktop/Mobile Web**: Click "Choose Image" to select a screenshot, or click "Or enter manually ✍️".
     *   **Android (PWA)**: Open an image in your gallery -> Share -> Select "Screenshot 👉 Calendar".
 3.  **Review & Edit**: The AI will populate the event details.
     *   Use the **Date Pickers** to adjust times if needed.
@@ -86,7 +87,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 - **Frontend**: React 19, TypeScript, Vite
 - **AI**: Google Gemini API (`@google/generative-ai`)
 - **Integration**: Google Identity Services (GIS), Google API Client (GAPI)
-- **UI Libraries**: `react-datepicker`, `canvas-confetti`
+- **UI Libraries**: `@mui/x-date-pickers`, `@mui/material`, `dayjs`, `canvas-confetti`
 - **Styling**: Vanilla CSS (Variables, Flexbox, Glassmorphism)
 
 ## 📦 Deployment

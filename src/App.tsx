@@ -197,6 +197,27 @@ function App() {
     setStatus('Ready for next.');
   };
 
+  const handleManualEntry = () => {
+    const now = new Date();
+    // Default to the next full hour
+    now.setMinutes(0, 0, 0);
+    now.setHours(now.getHours() + 1);
+    const offsetDateStart = new Date(now.getTime() - (now.getTimezoneOffset() * 60000));
+
+    const end = new Date(now.getTime() + 3600000);
+    const offsetDateEnd = new Date(end.getTime() - (end.getTimezoneOffset() * 60000));
+
+    setEventDetails({
+      summary: '',
+      location: '',
+      start_datetime: offsetDateStart.toISOString().slice(0, 19),
+      end_datetime: offsetDateEnd.toISOString().slice(0, 19),
+      description: ''
+    });
+    setStatus('');
+    setCreatedEventLink(null);
+  };
+
   return (
     <div className="container">
       <div className="banner">
@@ -260,12 +281,17 @@ function App() {
             <input type="file" accept="image/*" onChange={onFileSelect} style={{ display: 'none' }} />
             <span className="upload-btn">Choose Image</span>
           </label>
+          <div style={{ marginTop: '1.2rem' }}>
+            <button className="manual-entry-link" onClick={handleManualEntry}>
+              Or enter manually ✍️
+            </button>
+          </div>
         </div>
       )}
 
       {eventDetails && (
         <div className="card event-preview">
-          <h2>{createdEventLink ? 'Event Created!' : 'Confirm Event'}</h2>
+          <h2>{createdEventLink ? 'Event Created!' : (eventDetails.summary === '' && eventDetails.location === '' ? 'Manual Entry' : 'Confirm Event')}</h2>
 
           <div className="input-group">
             <label>Event Name</label>

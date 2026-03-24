@@ -231,7 +231,8 @@ input[type="file"] {
 .manual-entry-link {
   background: none;
   border: none;
-  color: #1e40af; /* Dark blue */
+  color: #1e40af;
+  /* Dark blue */
   font-style: italic;
   cursor: pointer;
   text-decoration: underline;
@@ -242,7 +243,10 @@ input[type="file"] {
 }
 
 .manual-entry-link:hover {
-  color: #172554;
+  color: #15eb1c;
+  /* Bright vibrant blue that pops */
+  text-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+  background-color: transparent !important;
 }
 
 /* Animation Keyframes */

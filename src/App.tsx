@@ -274,7 +274,7 @@ function App() {
 
           <div className="header-actions">
             <a href="https://ko-fi.com/egodevnull" target="_blank" rel="noopener noreferrer" className="coffee-link">
-              Buy me a ☕️
+              Please Buy Me a ☕️
             </a>
             {authorized && (
               <button className="connected-badge logout-btn" onClick={handleLogoutClick} title="Click to Sign Out">

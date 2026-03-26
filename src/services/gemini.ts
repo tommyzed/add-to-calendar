@@ -17,7 +17,8 @@ export interface EventDetails {
 export async function parseImage(imageFile: File): Promise<EventDetails> {
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
-    const prompt = `Extract event details from this image. Return ONLY a JSON object with: summary, start_datetime (ISO), end_datetime (ISO, or +1hr if not found), location, and description (optional). If the image is not a clear event, set the "error" field to "UNABLE_TO_DETERMINE" but still return the JSON with any partial details or empty strings. Do not include markdown.`;
+    const currentYear = new Date().getFullYear();
+    const prompt = `Extract event details from this image. Assume the event is in the future, using the current year (${currentYear}) or later if no year is specified. Return ONLY a JSON object with: summary, start_datetime (ISO), end_datetime (ISO, or +1hr if not found), location, and description (optional). If the image is not a clear event, set the "error" field to "UNABLE_TO_DETERMINE" but still return the JSON with any partial details or empty strings. Do not include markdown.`;
 
     try {
         const start = Date.now();

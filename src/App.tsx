@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import { initGapi, initGis, authenticate, insertEvent, loadToken, signOut } from './services/calendar';
 import { parseImage } from './services/gemini';
@@ -6,7 +6,7 @@ import confetti from 'canvas-confetti';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import dayjs from 'dayjs';
+import dayjs, { Dayjs } from 'dayjs';
 import { ThemeProvider, createTheme } from '@mui/material/styles';
 
 const muiTheme = createTheme({
@@ -261,6 +261,33 @@ function App() {
     setCreatedEventLink(null);
   };
 
+  const handleSummaryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEventDetails((prev: any) => ({ ...prev, summary: e.target.value }));
+  }, []);
+
+  const handleLocationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setEventDetails((prev: any) => ({ ...prev, location: e.target.value }));
+  }, []);
+
+  const handleStartChange = useCallback((newValue: Dayjs | null) => {
+    if (newValue) {
+      setEventDetails((prev: any) => ({
+        ...prev,
+        start_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss'),
+        end_datetime: newValue.add(1, 'hour').format('YYYY-MM-DDTHH:mm:ss')
+      }));
+    }
+  }, []);
+
+  const handleEndChange = useCallback((newValue: Dayjs | null) => {
+    if (newValue) {
+      setEventDetails((prev: any) => ({
+        ...prev,
+        end_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss')
+      }));
+    }
+  }, []);
+
   return (
     <ThemeProvider theme={muiTheme}>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -343,7 +370,7 @@ function App() {
                 <input
                   type="text"
                   value={eventDetails.summary}
-                  onChange={(e) => setEventDetails({ ...eventDetails, summary: e.target.value })}
+                  onChange={handleSummaryChange}
                   disabled={!!createdEventLink}
                 />
               </div>
@@ -353,15 +380,7 @@ function App() {
                   <label style={{ marginBottom: '8px' }}>Start</label>
                   <DateTimePicker
                     value={eventDetails.start_datetime ? dayjs(eventDetails.start_datetime) : null}
-                    onChange={(newValue) => {
-                      if (newValue) {
-                        setEventDetails({
-                          ...eventDetails,
-                          start_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss'),
-                          end_datetime: newValue.add(1, 'hour').format('YYYY-MM-DDTHH:mm:ss')
-                        });
-                      }
-                    }}
+                    onChange={handleStartChange}
                     disabled={!!createdEventLink}
                     slotProps={{ textField: { fullWidth: true, variant: 'outlined' } }}
                   />
@@ -371,11 +390,7 @@ function App() {
                   <label style={{ marginBottom: '8px' }}>End</label>
                   <DateTimePicker
                     value={eventDetails.end_datetime ? dayjs(eventDetails.end_datetime) : null}
-                    onChange={(newValue) => {
-                      if (newValue) {
-                        setEventDetails({ ...eventDetails, end_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss') });
-                      }
-                    }}
+                    onChange={handleEndChange}
                     disabled={!!createdEventLink}
                     slotProps={{ textField: { fullWidth: true, variant: 'outlined' } }}
                   />
@@ -387,7 +402,7 @@ function App() {
                 <input
                   type="text"
                   value={eventDetails.location || ''}
-                  onChange={(e) => setEventDetails({ ...eventDetails, location: e.target.value })}
+                  onChange={handleLocationChange}
                   disabled={!!createdEventLink}
                   placeholder="Add location"
                 />

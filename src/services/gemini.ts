@@ -14,6 +14,9 @@ export interface EventDetails {
     error?: string;
 }
 
+const MARKDOWN_JSON_REGEX = /```json/g;
+const MARKDOWN_BLOCK_REGEX = /```/g;
+
 export async function parseImage(imageFile: File): Promise<EventDetails> {
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
@@ -30,7 +33,7 @@ export async function parseImage(imageFile: File): Promise<EventDetails> {
         const text = response.text();
 
         // Clean up markdown code blocks if present
-        const cleanText = text.replace(/```json/g, '').replace(/```/g, '').trim();
+        const cleanText = text.replace(MARKDOWN_JSON_REGEX, '').replace(MARKDOWN_BLOCK_REGEX, '').trim();
 
         console.log("Gemini processing time:", Date.now() - start, "ms");
         return JSON.parse(cleanText) as EventDetails;

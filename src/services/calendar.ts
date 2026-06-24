@@ -21,7 +21,7 @@ const AUTH_BRIDGE_URL = import.meta.env.DEV
 
 let codeClient: google.accounts.oauth2.CodeClient;
 let tokenResolver: ((value: void | PromiseLike<void>) => void) | null = null;
-let tokenRejecter: ((reason?: any) => void) | null = null;
+let tokenRejecter: ((reason?: unknown) => void) | null = null;
 
 export function initGapi() {
     return new Promise<void>((resolve, reject) => {

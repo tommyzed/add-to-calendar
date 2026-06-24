@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import './App.css'
 import { initGapi, initGis, authenticate, insertEvent, loadToken, signOut } from './services/calendar';
 import { parseImage } from './services/gemini';
@@ -261,6 +261,9 @@ function App() {
     setCreatedEventLink(null);
   };
 
+  const parsedStartDatetime = useMemo(() => eventDetails?.start_datetime ? dayjs(eventDetails.start_datetime) : null, [eventDetails?.start_datetime]);
+  const parsedEndDatetime = useMemo(() => eventDetails?.end_datetime ? dayjs(eventDetails.end_datetime) : null, [eventDetails?.end_datetime]);
+
   return (
     <ThemeProvider theme={muiTheme}>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -352,7 +355,7 @@ function App() {
                 <div className="input-group mui-date-picker-wrapper">
                   <label style={{ marginBottom: '8px' }}>Start</label>
                   <DateTimePicker
-                    value={eventDetails.start_datetime ? dayjs(eventDetails.start_datetime) : null}
+                    value={parsedStartDatetime}
                     onChange={(newValue) => {
                       if (newValue) {
                         setEventDetails({
@@ -370,7 +373,7 @@ function App() {
                 <div className="input-group mui-date-picker-wrapper">
                   <label style={{ marginBottom: '8px' }}>End</label>
                   <DateTimePicker
-                    value={eventDetails.end_datetime ? dayjs(eventDetails.end_datetime) : null}
+                    value={parsedEndDatetime}
                     onChange={(newValue) => {
                       if (newValue) {
                         setEventDetails({ ...eventDetails, end_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss') });

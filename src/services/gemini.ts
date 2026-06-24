@@ -34,9 +34,9 @@ export async function parseImage(imageFile: File): Promise<EventDetails> {
 
         console.log("Gemini processing time:", Date.now() - start, "ms");
         return JSON.parse(cleanText) as EventDetails;
-    } catch (error: any) {
+    } catch (error: unknown) {
         console.error("Gemini Parse Error:", error);
-        const errorMessage = error.message || error.toString();
+        const errorMessage = error instanceof Error ? error.message : String(error);
         throw new Error(`Gemini API Error: ${errorMessage}`);
     }
 }

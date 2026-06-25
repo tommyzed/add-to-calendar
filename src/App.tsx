@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import './App.css'
 import { initGapi, initGis, authenticate, insertEvent, loadToken, signOut } from './services/calendar';
-import { parseImage } from './services/gemini';
+import { parseImage, type EventDetails } from './services/gemini';
 import confetti from 'canvas-confetti';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
@@ -53,7 +53,7 @@ function App() {
   const [authorized, setAuthorized] = useState(false);
   const [processing, setProcessing] = useState(false);
   const [status, setStatus] = useState<string>('');
-  const [eventDetails, setEventDetails] = useState<any>(null);
+  const [eventDetails, setEventDetails] = useState<EventDetails | null>(null);
   const [createdEventLink, setCreatedEventLink] = useState<string | null>(null);
   const [isRestoring, setIsRestoring] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);

@@ -251,17 +251,18 @@ export async function insertEvent(eventData: any) {
             throw new Error("Not authenticated");
         }
 
+        const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         const event = {
             summary: eventData.summary,
             location: eventData.location,
             description: (eventData.description ? eventData.description + "\n\n" : "") + "💫✨ Imported by Screenshot 👉 Calendar.",
             start: {
                 dateTime: eventData.start_datetime,
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timeZone,
             },
             end: {
                 dateTime: eventData.end_datetime,
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timeZone,
             },
         };
 

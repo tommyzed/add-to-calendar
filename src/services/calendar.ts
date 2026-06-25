@@ -3,6 +3,8 @@
 /// <reference types="gapi.client.calendar" />
 /// <reference types="google.accounts" />
 
+import type { EventDetails } from './gemini';
+
 // Google Identity Services (GIS) and Calendar API
 
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
@@ -243,7 +245,7 @@ export async function authenticate() {
     });
 }
 
-export async function insertEvent(eventData: any) {
+export async function insertEvent(eventData: EventDetails) {
     try {
         // Double check token validity before request
         const isAuth = await loadToken();

@@ -253,6 +253,22 @@ export async function insertEvent(eventData: EventDetails) {
             throw new Error("Not authenticated");
         }
 
+        if (!eventData || typeof eventData !== 'object') {
+            throw new Error("Invalid event data: must be an object");
+        }
+
+        if (!eventData.summary || typeof eventData.summary !== 'string' || eventData.summary.trim() === '') {
+            throw new Error("Invalid or missing event summary");
+        }
+
+        if (!eventData.start_datetime || isNaN(Date.parse(eventData.start_datetime))) {
+            throw new Error("Invalid or missing start_datetime");
+        }
+
+        if (eventData.end_datetime && isNaN(Date.parse(eventData.end_datetime))) {
+            throw new Error("Invalid end_datetime");
+        }
+
         const event = {
             summary: eventData.summary,
             location: eventData.location,

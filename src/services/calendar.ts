@@ -68,6 +68,11 @@ function saveTokens(access_token: string, expiry_date?: number, expires_in?: num
 }
 
 async function exchangeCodeForToken(code: string) {
+    // Validate authorization code format to prevent injection attacks
+    if (!code || typeof code !== 'string' || !/^[a-zA-Z0-9\-_/.]+$/.test(code) || code.length > 256) {
+        throw new Error('Invalid authorization code format');
+    }
+
     try {
         console.log('Exchanging code with Bridge:', AUTH_BRIDGE_URL);
         console.log('Using Client ID:', CLIENT_ID); // Verify this matches Cloud Function's CLIENT_ID

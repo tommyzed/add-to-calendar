@@ -108,8 +108,8 @@ async function exchangeCodeForToken(code: string) {
 
 async function refreshAccessToken() {
     const refresh_token = localStorage.getItem('gcal_refresh_token');
-    if (!refresh_token) {
-        throw new Error('No refresh token available');
+    if (!refresh_token || typeof refresh_token !== 'string' || refresh_token.trim() === '') {
+        throw new Error('Invalid or missing refresh token');
     }
 
     try {

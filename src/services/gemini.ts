@@ -36,7 +36,43 @@ export async function parseImage(imageFile: File): Promise<EventDetails> {
         const cleanText = text.replace(MARKDOWN_JSON_REGEX, '').replace(MARKDOWN_BLOCK_REGEX, '').trim();
 
         console.log("Gemini processing time:", Date.now() - start, "ms");
-        return JSON.parse(cleanText) as EventDetails;
+
+        const parsed = JSON.parse(cleanText);
+
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+            throw new Error("Invalid response: Expected a JSON object");
+        }
+
+        if (typeof parsed.summary !== 'string') {
+            throw new Error("Invalid response: 'summary' must be a string");
+        }
+        if (typeof parsed.start_datetime !== 'string') {
+            throw new Error("Invalid response: 'start_datetime' must be a string");
+        }
+
+        const eventDetails: EventDetails = {
+            summary: parsed.summary,
+            start_datetime: parsed.start_datetime,
+        };
+
+        if (parsed.end_datetime !== undefined) {
+            if (typeof parsed.end_datetime !== 'string') throw new Error("Invalid response: 'end_datetime' must be a string");
+            eventDetails.end_datetime = parsed.end_datetime;
+        }
+        if (parsed.location !== undefined) {
+            if (typeof parsed.location !== 'string') throw new Error("Invalid response: 'location' must be a string");
+            eventDetails.location = parsed.location;
+        }
+        if (parsed.description !== undefined) {
+            if (typeof parsed.description !== 'string') throw new Error("Invalid response: 'description' must be a string");
+            eventDetails.description = parsed.description;
+        }
+        if (parsed.error !== undefined) {
+            if (typeof parsed.error !== 'string') throw new Error("Invalid response: 'error' must be a string");
+            eventDetails.error = parsed.error;
+        }
+
+        return eventDetails;
     } catch (error: unknown) {
         console.error("Gemini Parse Error:", error);
         const errorMessage = error instanceof Error ? error.message : String(error);

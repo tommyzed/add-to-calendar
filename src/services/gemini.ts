@@ -48,7 +48,9 @@ async function fileToGenerativePart(file: File): Promise<{ inlineData: { data: s
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => {
-            const base64String = (reader.result as string).split(',')[1];
+            const result = reader.result as string;
+            const commaIndex = result.indexOf(',');
+            const base64String = result.substring(commaIndex + 1);
             resolve({
                 inlineData: {
                     data: base64String,

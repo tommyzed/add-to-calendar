@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useMemo } from 'react'
 import './App.css'
 import { initGapi, initGis, authenticate, insertEvent, loadToken, signOut } from './services/calendar';
 import { parseImage, type EventDetails } from './services/gemini';
@@ -288,6 +288,14 @@ function App() {
     }
   }, []);
 
+  const parsedStartDate = useMemo(() => {
+    return eventDetails?.start_datetime ? dayjs(eventDetails.start_datetime) : null;
+  }, [eventDetails?.start_datetime]);
+
+  const parsedEndDate = useMemo(() => {
+    return eventDetails?.end_datetime ? dayjs(eventDetails.end_datetime) : null;
+  }, [eventDetails?.end_datetime]);
+
   return (
     <ThemeProvider theme={muiTheme}>
       <LocalizationProvider dateAdapter={AdapterDayjs}>
@@ -379,7 +387,7 @@ function App() {
                 <div className="input-group mui-date-picker-wrapper">
                   <label style={{ marginBottom: '8px' }}>Start</label>
                   <DateTimePicker
-                    value={eventDetails.start_datetime ? dayjs(eventDetails.start_datetime) : null}
+                    value={parsedStartDate}
                     onChange={handleStartChange}
                     disabled={!!createdEventLink}
                     slotProps={{ textField: { fullWidth: true, variant: 'outlined' } }}
@@ -389,7 +397,7 @@ function App() {
                 <div className="input-group mui-date-picker-wrapper">
                   <label style={{ marginBottom: '8px' }}>End</label>
                   <DateTimePicker
-                    value={eventDetails.end_datetime ? dayjs(eventDetails.end_datetime) : null}
+                    value={parsedEndDate}
                     onChange={handleEndChange}
                     disabled={!!createdEventLink}
                     slotProps={{ textField: { fullWidth: true, variant: 'outlined' } }}

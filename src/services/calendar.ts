@@ -41,7 +41,7 @@ export function initGapi() {
                 }
             });
         };
-        script.onerror = reject;
+        script.onerror = () => reject(new Error('Failed to load gapi script'));
         document.body.appendChild(script);
     });
 }
@@ -85,9 +85,9 @@ async function exchangeCodeForToken(code: string) {
         if (!response.ok) {
             const text = await response.text();
             try {
-                const error = JSON.parse(text);
+                const error = JSON.parse(text) as { message?: string };
                 throw new Error(error.message || 'Failed to exchange code');
-            } catch (e) {
+            } catch {
                 throw new Error(`Server Error: ${text}`);
             }
         }
@@ -130,9 +130,9 @@ async function refreshAccessToken() {
             }
             const text = await response.text();
             try {
-                const error = JSON.parse(text);
+                const error = JSON.parse(text) as { message?: string };
                 throw new Error(error.message || 'Failed to refresh token');
-            } catch (e) {
+            } catch {
                 throw new Error(`Server Error: ${text}`);
             }
         }
@@ -168,8 +168,8 @@ export async function loadToken(): Promise<boolean> {
             try {
                 await refreshAccessToken();
                 return true;
-            } catch (e) {
-                console.warn('Silent refresh failed', e);
+            } catch (err) {
+                console.warn('Silent refresh failed', err);
                 return false;
             }
         } else {
@@ -181,7 +181,7 @@ export async function loadToken(): Promise<boolean> {
         try {
             await refreshAccessToken();
             return true;
-        } catch (e) {
+        } catch {
             return false;
         }
     }
@@ -224,7 +224,7 @@ export function initGis() {
             });
             resolve();
         };
-        script.onerror = reject;
+        script.onerror = () => reject(new Error('Failed to load GIS script'));
         document.body.appendChild(script);
     });
 }
@@ -239,8 +239,8 @@ export async function authenticate() {
             // Request auth code (offline access for refresh token)
             // Note: select_account allows user to switch accounts if needed
             codeClient.requestCode();
-        } catch (e) {
-            reject(e);
+        } catch (err) {
+            reject(err);
         }
     });
 }
@@ -290,11 +290,14 @@ export async function insertEvent(eventData: EventDetails) {
 
         const response = await request;
         return response.result;
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Error inserting event", err);
         // If 401, maybe token expired during use? Try one retry if we wanted to be robust
-        if (err.result && err.result.error && err.result.error.code === 401) {
-            // Could trigger refresh here and retry, but simpler to rely on loadToken checks for now
+        if (err && typeof err === 'object') {
+            const errObj = err as { result?: { error?: { code?: number } } };
+            if (errObj.result && errObj.result.error && errObj.result.error.code === 401) {
+                // Could trigger refresh here and retry, but simpler to rely on loadToken checks for now
+            }
         }
         throw err;
     }

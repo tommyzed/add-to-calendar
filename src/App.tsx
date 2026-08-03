@@ -58,6 +58,69 @@ function App() {
   const [isRestoring, setIsRestoring] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
+  const processFile = useCallback(async (file: File) => {
+    setProcessing(true);
+    setStatus('Analyzing image with Gemini...');
+    setCreatedEventLink(null); // Reset link
+    try {
+      const details = await parseImage(file);
+      console.log('Parsed:', details);
+
+      if (details.error && details.error !== 'none') {
+        if (details.error === 'UNABLE_TO_DETERMINE') {
+          // Warn user but allow manual entry
+          setStatus('🧙 The AI elves are confused. Please review. 🧙');
+          // Ensure we have at least empty structure
+          setEventDetails({
+            summary: details.summary || '',
+            location: details.location || '',
+            start_datetime: details.start_datetime || new Date().toISOString(),
+            end_datetime: details.end_datetime || new Date(Date.now() + 3600000).toISOString(),
+            description: details.description || ''
+          });
+        } else {
+          // Hard error
+          setStatus(`Could not find event: ${details.error}`);
+          setProcessing(false);
+          return;
+        }
+      } else {
+        setEventDetails(details);
+        setStatus('Event parsed! Confirm to add.');
+      }
+    } catch (e: unknown) {
+      setStatus(`Error parsing: ${e instanceof Error ? e.message : String(e)}`);
+    } finally {
+      setProcessing(false);
+    }
+  }, []);
+
+  const handleSharedContent = useCallback(async () => {
+    try {
+      if ('caches' in window) {
+        const cache = await caches.open('share-target');
+        const response = await cache.match('shared-file');
+        if (response) {
+          const blob = await response.blob();
+          const file = new File([blob], "shared_image.png", { type: blob.type });
+          processFile(file);
+
+          // Clean up cache to prevent reprocessing on reload
+          await cache.delete('shared-file');
+
+          // Clean up URL to prevent triggering again
+          const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+          window.history.replaceState({ path: newUrl }, '', newUrl);
+        } else {
+          setStatus('No shared file found in cache.');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      setStatus('Error retrieving shared file.');
+    }
+  }, [processFile]);
+
   useEffect(() => {
     // Start by assuming we are restoring if the flag exists
     const hasAuthFlag = localStorage.getItem('gcal_authed') === 'true';
@@ -109,33 +172,7 @@ function App() {
         setStatus(`Init Error: ${err}`);
         setIsRestoring(false);
       });
-  }, []);
-
-  const handleSharedContent = async () => {
-    try {
-      if ('caches' in window) {
-        const cache = await caches.open('share-target');
-        const response = await cache.match('shared-file');
-        if (response) {
-          const blob = await response.blob();
-          const file = new File([blob], "shared_image.png", { type: blob.type });
-          processFile(file);
-
-          // Clean up cache to prevent reprocessing on reload
-          await cache.delete('shared-file');
-
-          // Clean up URL to prevent triggering again
-          const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-          window.history.replaceState({ path: newUrl }, '', newUrl);
-        } else {
-          setStatus('No shared file found in cache.');
-        }
-      }
-    } catch (e) {
-      console.error(e);
-      setStatus('Error retrieving shared file.');
-    }
-  };
+  }, [handleSharedContent]);
 
   const handleAuth = async () => {
     try {
@@ -145,43 +182,6 @@ function App() {
       setStatus('Authorized!');
     } catch (e) {
       setStatus(`Auth Failed: ${JSON.stringify(e)}`);
-    }
-  };
-
-  const processFile = async (file: File) => {
-    setProcessing(true);
-    setStatus('Analyzing image with Gemini...');
-    setCreatedEventLink(null); // Reset link
-    try {
-      const details = await parseImage(file);
-      console.log('Parsed:', details);
-
-      if (details.error && details.error !== 'none') {
-        if (details.error === 'UNABLE_TO_DETERMINE') {
-          // Warn user but allow manual entry
-          setStatus('🧙 The AI elves are confused. Please review. 🧙');
-          // Ensure we have at least empty structure
-          setEventDetails({
-            summary: details.summary || '',
-            location: details.location || '',
-            start_datetime: details.start_datetime || new Date().toISOString(),
-            end_datetime: details.end_datetime || new Date(Date.now() + 3600000).toISOString(),
-            description: details.description || ''
-          });
-        } else {
-          // Hard error
-          setStatus(`Could not find event: ${details.error}`);
-          setProcessing(false);
-          return;
-        }
-      } else {
-        setEventDetails(details);
-        setStatus('Event parsed! Confirm to add.');
-      }
-    } catch (e: any) {
-      setStatus(`Error parsing: ${e.message}`);
-    } finally {
-      setProcessing(false);
     }
   };
 
@@ -197,9 +197,10 @@ function App() {
       }
       confetti();
       // Keep details on screen as requested
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      const msg = e.result?.error?.message || e.message || JSON.stringify(e);
+      const err = e as { result?: { error?: { message?: string } }; message?: string } | null | undefined;
+      const msg = err?.result?.error?.message || err?.message || String(e);
       setStatus(`Error adding event: ${msg}`);
     } finally {
       setProcessing(false);
@@ -262,29 +263,29 @@ function App() {
   };
 
   const handleSummaryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEventDetails((prev: any) => ({ ...prev, summary: e.target.value }));
+    setEventDetails((prev) => prev ? { ...prev, summary: e.target.value } : null);
   }, []);
 
   const handleLocationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEventDetails((prev: any) => ({ ...prev, location: e.target.value }));
+    setEventDetails((prev) => prev ? { ...prev, location: e.target.value } : null);
   }, []);
 
   const handleStartChange = useCallback((newValue: Dayjs | null) => {
     if (newValue) {
-      setEventDetails((prev: any) => ({
+      setEventDetails((prev) => prev ? {
         ...prev,
         start_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss'),
         end_datetime: newValue.add(1, 'hour').format('YYYY-MM-DDTHH:mm:ss')
-      }));
+      } : null);
     }
   }, []);
 
   const handleEndChange = useCallback((newValue: Dayjs | null) => {
     if (newValue) {
-      setEventDetails((prev: any) => ({
+      setEventDetails((prev) => prev ? {
         ...prev,
         end_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss')
-      }));
+      } : null);
     }
   }, []);
 

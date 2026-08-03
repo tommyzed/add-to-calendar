@@ -47,7 +47,10 @@ export function initGapi() {
 }
 
 // Token management
-function saveTokens(access_token: string, expiry_date?: number, expires_in?: number, refresh_token?: string) {
+let memoryAccessToken: string | null = null;
+let memoryExpiresAt = 0;
+
+function saveTokens(access_token: string, expiry_date?: number, expires_in?: number) {
     let expiresAt = 0;
     if (expiry_date) {
         expiresAt = expiry_date;
@@ -58,13 +61,10 @@ function saveTokens(access_token: string, expiry_date?: number, expires_in?: num
         expiresAt = Date.now() + 3600 * 1000;
     }
 
-    localStorage.setItem('gcal_access_token', access_token);
-    localStorage.setItem('gcal_expires_at', expiresAt.toString());
+    memoryAccessToken = access_token;
+    memoryExpiresAt = expiresAt;
 
-    if (refresh_token) {
-        localStorage.setItem('gcal_refresh_token', refresh_token);
-    }
-    console.log('Tokens saved. Expires at', new Date(expiresAt).toLocaleTimeString());
+    console.log('Tokens saved in memory. Expires at', new Date(expiresAt).toLocaleTimeString());
 }
 
 async function exchangeCodeForToken(code: string) {
@@ -78,6 +78,7 @@ async function exchangeCodeForToken(code: string) {
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include',
             // Added 'action' field based on "Invalid Action" error
             body: JSON.stringify({ action: 'exchange', code }),
         });
@@ -87,7 +88,7 @@ async function exchangeCodeForToken(code: string) {
             try {
                 const error = JSON.parse(text);
                 throw new Error(error.message || 'Failed to exchange code');
-            } catch (e) {
+            } catch {
                 throw new Error(`Server Error: ${text}`);
             }
         }
@@ -97,7 +98,7 @@ async function exchangeCodeForToken(code: string) {
 
         gapi.client.setToken({ access_token: data.access_token });
         // Server returns expiry_date (ms)
-        saveTokens(data.access_token, data.expiry_date, data.expires_in, data.refresh_token);
+        saveTokens(data.access_token, data.expiry_date, data.expires_in);
 
         return data;
     } catch (error) {
@@ -107,11 +108,6 @@ async function exchangeCodeForToken(code: string) {
 }
 
 async function refreshAccessToken() {
-    const refresh_token = localStorage.getItem('gcal_refresh_token');
-    if (!refresh_token) {
-        throw new Error('No refresh token available');
-    }
-
     try {
         console.log('Attempting to refresh access token...');
         const response = await fetch(AUTH_BRIDGE_URL, {
@@ -119,8 +115,9 @@ async function refreshAccessToken() {
             headers: {
                 'Content-Type': 'application/json',
             },
+            credentials: 'include',
             // Added 'action' field
-            body: JSON.stringify({ action: 'refresh', refresh_token }),
+            body: JSON.stringify({ action: 'refresh' }),
         });
 
         if (!response.ok) {
@@ -132,7 +129,7 @@ async function refreshAccessToken() {
             try {
                 const error = JSON.parse(text);
                 throw new Error(error.message || 'Failed to refresh token');
-            } catch (e) {
+            } catch {
                 throw new Error(`Server Error: ${text}`);
             }
         }
@@ -152,46 +149,44 @@ async function refreshAccessToken() {
 }
 
 export async function loadToken(): Promise<boolean> {
-    const token = localStorage.getItem('gcal_access_token');
-    const expiresAt = localStorage.getItem('gcal_expires_at');
-    const refreshToken = localStorage.getItem('gcal_refresh_token');
+    const token = memoryAccessToken;
+    const expiresAt = memoryExpiresAt;
 
     if (token && expiresAt) {
-        if (Date.now() < Number(expiresAt)) {
+        if (Date.now() < expiresAt) {
             // Token is valid, restore it
             gapi.client.setToken({ access_token: token });
-            console.log('Restored valid token from storage');
+            console.log('Restored valid token from memory');
             return true;
-        } else if (refreshToken) {
-            // Token expired but we have refresh token
-            console.log('Token expired, attempting refresh...');
+        } else {
+            // Token expired, attempt refresh
+            console.log('In-memory token expired, attempting refresh...');
             try {
                 await refreshAccessToken();
                 return true;
-            } catch (e) {
-                console.warn('Silent refresh failed', e);
+            } catch {
+                console.warn('Silent refresh failed');
                 return false;
             }
-        } else {
-            console.log('Stored token expired and no refresh token');
-            signOut();
         }
-    } else if (refreshToken) {
-        // No access token but have refresh token (unlikely but possible)
+    } else {
+        // No token in memory (e.g. fresh page load).
+        // Attempt silent refresh via cookie-based flow.
+        console.log('No token in memory, attempting silent refresh...');
         try {
             await refreshAccessToken();
             return true;
-        } catch (e) {
+        } catch {
+            console.warn('Silent refresh on init failed');
             return false;
         }
     }
-    return false;
 }
 
 export function signOut() {
-    localStorage.removeItem('gcal_access_token');
-    localStorage.removeItem('gcal_expires_at');
-    localStorage.removeItem('gcal_refresh_token');
+    memoryAccessToken = null;
+    memoryExpiresAt = 0;
+    localStorage.removeItem('gcal_authed');
     // Clear GAPI token
     gapi.client.setToken(null);
     console.log('User signed out, tokens cleared.');
@@ -290,11 +285,17 @@ export async function insertEvent(eventData: EventDetails) {
 
         const response = await request;
         return response.result;
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Error inserting event", err);
         // If 401, maybe token expired during use? Try one retry if we wanted to be robust
-        if (err.result && err.result.error && err.result.error.code === 401) {
-            // Could trigger refresh here and retry, but simpler to rely on loadToken checks for now
+        if (err && typeof err === 'object' && 'result' in err) {
+            const res = (err as Record<string, unknown>).result;
+            if (res && typeof res === 'object' && 'error' in res) {
+                const apiError = (res as Record<string, unknown>).error;
+                if (apiError && typeof apiError === 'object' && 'code' in apiError && (apiError as Record<string, unknown>).code === 401) {
+                    // Could trigger refresh here and retry, but simpler to rely on loadToken checks for now
+                }
+            }
         }
         throw err;
     }

@@ -178,8 +178,9 @@ function App() {
         setEventDetails(details);
         setStatus('Event parsed! Confirm to add.');
       }
-    } catch (e: any) {
-      setStatus(`Error parsing: ${e.message}`);
+    } catch (e: unknown) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      setStatus(`Error parsing: ${errorMessage}`);
     } finally {
       setProcessing(false);
     }
@@ -197,9 +198,18 @@ function App() {
       }
       confetti();
       // Keep details on screen as requested
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      const msg = e.result?.error?.message || e.message || JSON.stringify(e);
+      let msg = String(e);
+      if (e && typeof e === 'object' && 'message' in e) {
+        msg = (e as { message: string }).message;
+      }
+      if (e && typeof e === 'object' && 'result' in e) {
+        const resultError = (e as { result?: { error?: { message?: string } } }).result?.error;
+        if (resultError?.message) {
+          msg = resultError.message;
+        }
+      }
       setStatus(`Error adding event: ${msg}`);
     } finally {
       setProcessing(false);
@@ -262,29 +272,29 @@ function App() {
   };
 
   const handleSummaryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEventDetails((prev: any) => ({ ...prev, summary: e.target.value }));
+    setEventDetails((prev) => prev ? { ...prev, summary: e.target.value } : null);
   }, []);
 
   const handleLocationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEventDetails((prev: any) => ({ ...prev, location: e.target.value }));
+    setEventDetails((prev) => prev ? { ...prev, location: e.target.value } : null);
   }, []);
 
   const handleStartChange = useCallback((newValue: Dayjs | null) => {
     if (newValue) {
-      setEventDetails((prev: any) => ({
+      setEventDetails((prev) => prev ? {
         ...prev,
         start_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss'),
         end_datetime: newValue.add(1, 'hour').format('YYYY-MM-DDTHH:mm:ss')
-      }));
+      } : null);
     }
   }, []);
 
   const handleEndChange = useCallback((newValue: Dayjs | null) => {
     if (newValue) {
-      setEventDetails((prev: any) => ({
+      setEventDetails((prev) => prev ? {
         ...prev,
         end_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss')
-      }));
+      } : null);
     }
   }, []);
 

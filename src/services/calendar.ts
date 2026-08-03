@@ -71,7 +71,6 @@ async function exchangeCodeForToken(code: string) {
     try {
         console.log('Exchanging code with Bridge:', AUTH_BRIDGE_URL);
         console.log('Using Client ID:', CLIENT_ID); // Verify this matches Cloud Function's CLIENT_ID
-        // console.log('Code:', code); // Don't log full code in prod, but helpful for debug
 
         const response = await fetch(AUTH_BRIDGE_URL, {
             method: 'POST',

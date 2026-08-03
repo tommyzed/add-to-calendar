@@ -41,12 +41,29 @@ self.addEventListener('fetch', (event) => {
                     // 1. Get client
                     // 2. Post message
 
-                    const client = await self.clients.get(event.clientId);
-                    // Note: event.clientId might be null if it's a navigation request/form submission from outside
+                    const file = mediaFiles[0];
+
+                    // Try sending via BroadcastChannel
+                    try {
+                        const channel = new BroadcastChannel('share-target');
+                        channel.postMessage({ type: 'share-file', file });
+                    } catch (err) {
+                        console.error('BroadcastChannel failed', err);
+                    }
+
+                    // Try sending via Client.postMessage
+                    try {
+                        const windowClients = await self.clients.matchAll({ type: 'window' });
+                        for (const client of windowClients) {
+                            client.postMessage({ type: 'share-file', file });
+                        }
+                    } catch (err) {
+                        console.error('postMessage failed', err);
+                    }
 
                     // Fallback: Store in a specifically named cache "share-target"
                     const cache = await caches.open('share-target');
-                    await cache.put('shared-file', new Response(mediaFiles[0]));
+                    await cache.put('shared-file', new Response(file));
 
                     return Response.redirect('/?shared=true', 303);
                 } catch (err) {

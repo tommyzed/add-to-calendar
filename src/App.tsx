@@ -58,7 +58,61 @@ function App() {
   const [isRestoring, setIsRestoring] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
+  const handleSharedContent = useCallback(async () => {
+    try {
+      if ('caches' in window) {
+        const cache = await caches.open('share-target');
+        const response = await cache.match('shared-file');
+        if (response) {
+          const blob = await response.blob();
+          const file = new File([blob], "shared_image.png", { type: blob.type });
+          processFile(file);
+
+          // Clean up cache to prevent reprocessing on reload
+          await cache.delete('shared-file');
+
+          // Clean up URL to prevent triggering again
+          const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+          window.history.replaceState({ path: newUrl }, '', newUrl);
+        } else {
+          setStatus('No shared file found in cache.');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      setStatus('Error retrieving shared file.');
+    }
+  }, []);
+
   useEffect(() => {
+    // Listen for broadcasted or postMessage'd shared file from service worker
+    const handleIncomingMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'share-file') {
+        const file = event.data.file;
+        if (file) {
+          setStatus('Shared content received. Processing...');
+          processFile(file);
+          // Clean up URL to prevent triggering fallback again
+          const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+          window.history.replaceState({ path: newUrl }, '', newUrl);
+        }
+      }
+    };
+
+    // 1. Listen via BroadcastChannel
+    let channel: BroadcastChannel | null = null;
+    try {
+      channel = new BroadcastChannel('share-target');
+      channel.addEventListener('message', handleIncomingMessage);
+    } catch (err) {
+      console.error('Failed to init BroadcastChannel in client', err);
+    }
+
+    // 2. Listen via service worker messages
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', handleIncomingMessage);
+    }
+
     // Start by assuming we are restoring if the flag exists
     const hasAuthFlag = localStorage.getItem('gcal_authed') === 'true';
     setIsRestoring(hasAuthFlag); // If no flag, we are not restoring, effectively.
@@ -109,33 +163,17 @@ function App() {
         setStatus(`Init Error: ${err}`);
         setIsRestoring(false);
       });
-  }, []);
 
-  const handleSharedContent = async () => {
-    try {
-      if ('caches' in window) {
-        const cache = await caches.open('share-target');
-        const response = await cache.match('shared-file');
-        if (response) {
-          const blob = await response.blob();
-          const file = new File([blob], "shared_image.png", { type: blob.type });
-          processFile(file);
-
-          // Clean up cache to prevent reprocessing on reload
-          await cache.delete('shared-file');
-
-          // Clean up URL to prevent triggering again
-          const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-          window.history.replaceState({ path: newUrl }, '', newUrl);
-        } else {
-          setStatus('No shared file found in cache.');
-        }
+    return () => {
+      if (channel) {
+        channel.removeEventListener('message', handleIncomingMessage);
+        channel.close();
       }
-    } catch (e) {
-      console.error(e);
-      setStatus('Error retrieving shared file.');
-    }
-  };
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.removeEventListener('message', handleIncomingMessage);
+      }
+    };
+  }, [handleSharedContent]);
 
   const handleAuth = async () => {
     try {
@@ -178,8 +216,9 @@ function App() {
         setEventDetails(details);
         setStatus('Event parsed! Confirm to add.');
       }
-    } catch (e: any) {
-      setStatus(`Error parsing: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setStatus(`Error parsing: ${msg}`);
     } finally {
       setProcessing(false);
     }
@@ -197,9 +236,10 @@ function App() {
       }
       confetti();
       // Keep details on screen as requested
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      const msg = e.result?.error?.message || e.message || JSON.stringify(e);
+      const errorObj = e as { result?: { error?: { message?: string } }; message?: string };
+      const msg = errorObj.result?.error?.message || errorObj.message || JSON.stringify(e);
       setStatus(`Error adding event: ${msg}`);
     } finally {
       setProcessing(false);
@@ -262,29 +302,29 @@ function App() {
   };
 
   const handleSummaryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEventDetails((prev: any) => ({ ...prev, summary: e.target.value }));
+    setEventDetails((prev) => prev ? { ...prev, summary: e.target.value } : null);
   }, []);
 
   const handleLocationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEventDetails((prev: any) => ({ ...prev, location: e.target.value }));
+    setEventDetails((prev) => prev ? { ...prev, location: e.target.value } : null);
   }, []);
 
   const handleStartChange = useCallback((newValue: Dayjs | null) => {
     if (newValue) {
-      setEventDetails((prev: any) => ({
+      setEventDetails((prev) => prev ? {
         ...prev,
         start_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss'),
         end_datetime: newValue.add(1, 'hour').format('YYYY-MM-DDTHH:mm:ss')
-      }));
+      } : null);
     }
   }, []);
 
   const handleEndChange = useCallback((newValue: Dayjs | null) => {
     if (newValue) {
-      setEventDetails((prev: any) => ({
+      setEventDetails((prev) => prev ? {
         ...prev,
         end_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss')
-      }));
+      } : null);
     }
   }, []);
 

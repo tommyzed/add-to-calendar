@@ -21,6 +21,16 @@ const AUTH_BRIDGE_URL = import.meta.env.DEV
     ? '/api/auth'
     : (process.env.AUTH_BRIDGE_URL || import.meta.env.VITE_AUTH_BRIDGE_URL || 'https://auth-bridge-785229654842.europe-west1.run.app');
 
+// Cache the resolved timezone to avoid re-computation on every event insertion
+let cachedTimeZone: string | null = null;
+
+function getTimeZone(): string {
+    if (!cachedTimeZone) {
+        cachedTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    }
+    return cachedTimeZone;
+}
+
 let codeClient: google.accounts.oauth2.CodeClient;
 let tokenResolver: ((value: void | PromiseLike<void>) => void) | null = null;
 let tokenRejecter: ((reason?: unknown) => void) | null = null;
@@ -275,11 +285,11 @@ export async function insertEvent(eventData: EventDetails) {
             description: (eventData.description ? eventData.description + "\n\n" : "") + "💫✨ Imported by Screenshot 👉 Calendar.",
             start: {
                 dateTime: eventData.start_datetime,
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timeZone: getTimeZone(),
             },
             end: {
                 dateTime: eventData.end_datetime,
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timeZone: getTimeZone(),
             },
         };
 

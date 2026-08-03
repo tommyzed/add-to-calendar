@@ -178,8 +178,9 @@ function App() {
         setEventDetails(details);
         setStatus('Event parsed! Confirm to add.');
       }
-    } catch (e: any) {
-      setStatus(`Error parsing: ${e.message}`);
+    } catch (e: unknown) {
+      const err = e as { message?: string };
+      setStatus(`Error parsing: ${err.message || 'Unknown error'}`);
     } finally {
       setProcessing(false);
     }
@@ -197,9 +198,10 @@ function App() {
       }
       confetti();
       // Keep details on screen as requested
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      const msg = e.result?.error?.message || e.message || JSON.stringify(e);
+      const err = e as { result?: { error?: { message?: string } }; message?: string };
+      const msg = err.result?.error?.message || err.message || JSON.stringify(err);
       setStatus(`Error adding event: ${msg}`);
     } finally {
       setProcessing(false);
@@ -262,29 +264,29 @@ function App() {
   };
 
   const handleSummaryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEventDetails((prev: any) => ({ ...prev, summary: e.target.value }));
+    setEventDetails((prev) => prev ? { ...prev, summary: e.target.value } : null);
   }, []);
 
   const handleLocationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEventDetails((prev: any) => ({ ...prev, location: e.target.value }));
+    setEventDetails((prev) => prev ? { ...prev, location: e.target.value } : null);
   }, []);
 
   const handleStartChange = useCallback((newValue: Dayjs | null) => {
     if (newValue) {
-      setEventDetails((prev: any) => ({
+      setEventDetails((prev) => prev ? {
         ...prev,
         start_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss'),
         end_datetime: newValue.add(1, 'hour').format('YYYY-MM-DDTHH:mm:ss')
-      }));
+      } : null);
     }
   }, []);
 
   const handleEndChange = useCallback((newValue: Dayjs | null) => {
     if (newValue) {
-      setEventDetails((prev: any) => ({
+      setEventDetails((prev) => prev ? {
         ...prev,
         end_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss')
-      }));
+      } : null);
     }
   }, []);
 

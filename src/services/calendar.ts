@@ -269,17 +269,18 @@ export async function insertEvent(eventData: EventDetails) {
             throw new Error("Invalid end_datetime");
         }
 
+        const currentTimeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
         const event = {
             summary: eventData.summary,
             location: eventData.location,
             description: (eventData.description ? eventData.description + "\n\n" : "") + "💫✨ Imported by Screenshot 👉 Calendar.",
             start: {
                 dateTime: eventData.start_datetime,
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timeZone: currentTimeZone,
             },
             end: {
                 dateTime: eventData.end_datetime,
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timeZone: currentTimeZone,
             },
         };
 

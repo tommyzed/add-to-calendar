@@ -87,8 +87,8 @@ async function exchangeCodeForToken(code: string) {
             try {
                 const error = JSON.parse(text);
                 throw new Error(error.message || 'Failed to exchange code');
-            } catch (e) {
-                throw new Error(`Server Error: ${text}`);
+            } catch {
+                throw new Error('Server Error');
             }
         }
 
@@ -132,8 +132,8 @@ async function refreshAccessToken() {
             try {
                 const error = JSON.parse(text);
                 throw new Error(error.message || 'Failed to refresh token');
-            } catch (e) {
-                throw new Error(`Server Error: ${text}`);
+            } catch {
+                throw new Error('Server Error');
             }
         }
 
@@ -181,7 +181,7 @@ export async function loadToken(): Promise<boolean> {
         try {
             await refreshAccessToken();
             return true;
-        } catch (e) {
+        } catch {
             return false;
         }
     }
@@ -290,11 +290,14 @@ export async function insertEvent(eventData: EventDetails) {
 
         const response = await request;
         return response.result;
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Error inserting event", err);
         // If 401, maybe token expired during use? Try one retry if we wanted to be robust
-        if (err.result && err.result.error && err.result.error.code === 401) {
-            // Could trigger refresh here and retry, but simpler to rely on loadToken checks for now
+        if (err && typeof err === 'object' && 'result' in err) {
+            const result = (err as { result?: { error?: { code?: number } } }).result;
+            if (result && result.error && result.error.code === 401) {
+                // Could trigger refresh here and retry, but simpler to rely on loadToken checks for now
+            }
         }
         throw err;
     }

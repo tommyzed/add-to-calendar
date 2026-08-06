@@ -71,7 +71,6 @@ async function exchangeCodeForToken(code: string) {
     try {
         console.log('Exchanging code with Bridge:', AUTH_BRIDGE_URL);
         console.log('Using Client ID:', CLIENT_ID); // Verify this matches Cloud Function's CLIENT_ID
-        // console.log('Code:', code); // Don't log full code in prod, but helpful for debug
 
         const response = await fetch(AUTH_BRIDGE_URL, {
             method: 'POST',
@@ -87,7 +86,7 @@ async function exchangeCodeForToken(code: string) {
             try {
                 const error = JSON.parse(text);
                 throw new Error(error.message || 'Failed to exchange code');
-            } catch (e) {
+            } catch {
                 throw new Error(`Server Error: ${text}`);
             }
         }
@@ -132,7 +131,7 @@ async function refreshAccessToken() {
             try {
                 const error = JSON.parse(text);
                 throw new Error(error.message || 'Failed to refresh token');
-            } catch (e) {
+            } catch {
                 throw new Error(`Server Error: ${text}`);
             }
         }
@@ -181,7 +180,7 @@ export async function loadToken(): Promise<boolean> {
         try {
             await refreshAccessToken();
             return true;
-        } catch (e) {
+        } catch {
             return false;
         }
     }
@@ -290,11 +289,17 @@ export async function insertEvent(eventData: EventDetails) {
 
         const response = await request;
         return response.result;
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Error inserting event", err);
         // If 401, maybe token expired during use? Try one retry if we wanted to be robust
-        if (err.result && err.result.error && err.result.error.code === 401) {
-            // Could trigger refresh here and retry, but simpler to rely on loadToken checks for now
+        if (err && typeof err === 'object' && 'result' in err) {
+             const result = (err as Record<string, unknown>).result;
+             if (result && typeof result === 'object' && 'error' in result) {
+                 const errorObj = (result as Record<string, unknown>).error;
+                 if (errorObj && typeof errorObj === 'object' && 'code' in errorObj && errorObj.code === 401) {
+                     // Could trigger refresh here and retry, but simpler to rely on loadToken checks for now
+                 }
+             }
         }
         throw err;
     }

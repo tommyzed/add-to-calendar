@@ -7,7 +7,6 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react()],
     define: {
-      'process.env.GEMINI_APP_KEY': JSON.stringify(env.GEMINI_APP_KEY),
       'process.env.GEMINI_MODEL': JSON.stringify(env.GEMINI_MODEL),
       'process.env.GOOGLE_CLIENT_ID': JSON.stringify(env.GOOGLE_CLIENT_ID),
       'process.env.AUTH_BRIDGE_URL': JSON.stringify(env.AUTH_BRIDGE_URL),

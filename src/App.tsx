@@ -57,6 +57,8 @@ function App() {
   const [createdEventLink, setCreatedEventLink] = useState<string | null>(null);
   const [isRestoring, setIsRestoring] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [apiKey, setApiKey] = useState(localStorage.getItem('GEMINI_APP_KEY') || '');
+  const [showKeyInput, setShowKeyInput] = useState(!localStorage.getItem('GEMINI_APP_KEY'));
 
   useEffect(() => {
     // Start by assuming we are restoring if the flag exists
@@ -310,7 +312,33 @@ function App() {
             )}
           </div>
 
-          {!authorized && !processing ? (
+          {showKeyInput && (
+            <div className="card">
+              <h2 style={{ marginBottom: '10px' }}>Gemini API Key Required</h2>
+              <p style={{ marginBottom: '15px', fontSize: '0.9em' }}>Please enter your Google Gemini API key to continue.</p>
+              <div className="input-group">
+                <input
+                  type="password"
+                  placeholder="Enter API Key"
+                  value={apiKey}
+                  onChange={(e) => setApiKey(e.target.value)}
+                />
+              </div>
+              <button
+                style={{ marginTop: '15px' }}
+                onClick={() => {
+                  if (apiKey.trim()) {
+                    localStorage.setItem('GEMINI_APP_KEY', apiKey.trim());
+                    setShowKeyInput(false);
+                  }
+                }}
+              >
+                Save Key
+              </button>
+            </div>
+          )}
+
+          {!authorized && !processing && !showKeyInput ? (
             <div className="card">
               {isRestoring ? (
                 <div className="processing-container">

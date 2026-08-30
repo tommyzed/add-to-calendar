@@ -463,6 +463,9 @@ function App() {
                 </svg>
               </a>
             </div>
+            <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', fontSize: '0.8rem' }}>
+              Privacy Policy
+            </a>
             <span style={{ fontStyle: 'italic', fontSize: '0.8rem' }}>v1.2.1 - Copyright © 2026 Ego/dev/null</span>
           </footer>
         </div>

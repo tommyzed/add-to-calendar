@@ -463,9 +463,15 @@ function App() {
                 </svg>
               </a>
             </div>
-            <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline', fontSize: '0.8rem' }}>
-              Privacy Policy
-            </a>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem' }}>
+              <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
+                Privacy Policy
+              </a>
+              <span>&bull;</span>
+              <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
+                Terms of Service
+              </a>
+            </div>
             <span style={{ fontStyle: 'italic', fontSize: '0.8rem' }}>v1.2.1 - Copyright © 2026 Ego/dev/null</span>
           </footer>
         </div>

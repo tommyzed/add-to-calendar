@@ -272,7 +272,7 @@ export async function insertEvent(eventData: EventDetails) {
         const event = {
             summary: eventData.summary,
             location: eventData.location,
-            description: (eventData.description ? eventData.description + "\n\n" : "") + "💫✨ Imported by Screenshot 👉 Calendar.",
+            description: (eventData.description ? eventData.description + "\n\n" : "") + "💫✨ Imported by Add to Calendar.",
             start: {
                 dateTime: eventData.start_datetime,
                 timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,

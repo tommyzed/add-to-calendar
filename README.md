@@ -1,4 +1,4 @@
-# Screenshot 👉 Calendar
+# Add to Calendar
 
 A Progressive Web App (PWA) that uses **Google Gemini AI** to extract event details from screenshots (or any image) and adds them directly to your **Google Calendar**.
 
@@ -6,7 +6,7 @@ Built with **React**, **TypeScript**, and **Vite**, featuring a modern **Glassmo
 
 ## 🌐 Demo
 
-[**Try the App Live**](https://add-to-calendar-production.up.railway.app/)
+[**Try the App Live**](https://add-to-calendar.egodevnull.com/)
 
 _(NOTE: message me to be allowlisted)_
 
@@ -75,7 +75,7 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 1.  **Sign In**: Click "Sign In with Google" to authorize Calendar access (only needed once).
 2.  **Add an Image or Enter Manually**:
     *   **Desktop/Mobile Web**: Click "Choose Image" to select a screenshot, or click "Or enter manually ✍️".
-    *   **Android (PWA)**: Open an image in your gallery -> Share -> Select "Screenshot 👉 Calendar".
+    *   **Android (PWA)**: Open an image in your gallery -> Share -> Select "Add to Calendar".
 3.  **Review & Edit**: The AI will populate the event details.
     *   Use the **Date Pickers** to adjust times if needed.
     *   Edit the **Name** or **Location**.

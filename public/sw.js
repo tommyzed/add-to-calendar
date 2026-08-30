@@ -1,4 +1,4 @@
-const CACHE_NAME = 'screenshot-calendar-v3'; // Increment to force update
+const CACHE_NAME = 'add-to-calendar-v4'; // Increment to force update
 
 self.addEventListener('install', (event) => {
     self.skipWaiting();

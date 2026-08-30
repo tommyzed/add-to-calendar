@@ -294,7 +294,7 @@ function App() {
         <div className="container">
           <div className="banner">
             <h1 className="title">
-              <span className="screenshot">Screenshot 👉 Calendar</span>
+              <span className="screenshot">Add to Calendar</span>
             </h1>
             <p className="tagline">Turn screenshots into scheduled events instantly!</p>
           </div>
@@ -472,7 +472,7 @@ function App() {
                 Terms of Service
               </a>
             </div>
-            <span style={{ fontStyle: 'italic', fontSize: '0.8rem' }}>v1.2.1 - Copyright © 2026 Ego/dev/null</span>
+            <span style={{ fontStyle: 'italic', fontSize: '0.8rem' }}>v1.3 - Copyright © 2026 Ego/dev/null</span>
           </footer>
         </div>
       </LocalizationProvider>

@@ -472,7 +472,7 @@ function App() {
                 Terms of Service
               </a>
             </div>
-            <span style={{ fontStyle: 'italic', fontSize: '0.8rem' }}>v1.3 - Copyright © 2026 Ego/dev/null</span>
+            <span style={{ fontStyle: 'italic', fontSize: '0.8rem' }}>v1.3 - Copyright © 2026 EGO /dev/null</span>
           </footer>
         </div>
       </LocalizationProvider>

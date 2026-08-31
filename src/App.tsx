@@ -12,8 +12,8 @@ import { ThemeProvider, createTheme } from '@mui/material/styles';
 const muiTheme = createTheme({
   palette: {
     mode: 'dark',
-    primary: { main: '#3b82f6' },
-    background: { paper: 'rgba(30, 30, 47, 0.95)' }
+    primary: { main: '#f59e0b', light: '#fbbf24', dark: '#d97706' },
+    background: { paper: 'rgba(38, 28, 20, 0.96)' }
   },
   typography: { fontFamily: 'inherit' },
   components: {
@@ -26,7 +26,7 @@ const muiTheme = createTheme({
           fontFamily: 'inherit',
           '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
           '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
-          '&.Mui-focused fieldset': { borderColor: '#3b82f6', borderWidth: '1px' },
+          '&.Mui-focused fieldset': { borderColor: '#f59e0b', borderWidth: '1px' },
         },
         input: {
           padding: '12px 14px',
@@ -41,7 +41,7 @@ const muiTheme = createTheme({
         root: {
           backgroundImage: 'none',
           backdropFilter: 'blur(10px)',
-          border: '1px solid rgba(255, 255, 255, 0.1)',
+          border: '1px solid rgba(255, 255, 255, 0.15)',
           borderRadius: '16px',
         }
       }
@@ -439,14 +439,14 @@ function App() {
             </div>
           )}
 
-          <footer className="footer" style={{ marginTop: '2rem', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.5rem', opacity: 0.7 }}>
+          <footer className="footer">
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
               <a href="https://www.linkedin.com/in/tomolick/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', display: 'flex', alignItems: 'center' }} aria-label="LinkedIn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
                 </svg>
               </a>
-              <a href="https://www.egodevnull.com" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', display: 'flex', alignItems: 'center' }} aria-label="Ego /dev/null">
+              <a href="https://egodevnull.com" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', display: 'flex', alignItems: 'center' }} aria-label="Ego /dev/null">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
                   <defs>
                     <mask id="eo-mask">
@@ -472,7 +472,9 @@ function App() {
                 Terms of Service
               </a>
             </div>
-            <span style={{ fontStyle: 'italic', fontSize: '0.8rem' }}>v1.3 - Copyright © 2026 EGO /dev/null</span>
+            <span style={{ fontStyle: 'italic', fontSize: '0.8rem' }}>
+              v1.4 - Copyright © 2026 <a href="https://egodevnull.com" target="_blank" rel="noopener noreferrer" className="footer-brand-link">EGO /dev/null</a>
+            </span>
           </footer>
         </div>
       </LocalizationProvider>

@@ -1,9 +1,6 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
-
-const API_KEY = process.env.GEMINI_APP_KEY;
-const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-1.5-flash";
-
-const genAI = new GoogleGenerativeAI(API_KEY);
+const AUTH_BRIDGE_URL = import.meta.env.DEV
+    ? '/api/auth'
+    : (process.env.AUTH_BRIDGE_URL || import.meta.env.VITE_AUTH_BRIDGE_URL || 'https://auth-bridge-785229654842.europe-west1.run.app');
 
 export interface EventDetails {
     summary: string;
@@ -14,47 +11,49 @@ export interface EventDetails {
     error?: string;
 }
 
-const MARKDOWN_JSON_REGEX = /```json/g;
-const MARKDOWN_BLOCK_REGEX = /```/g;
-
 export async function parseImage(imageFile: File): Promise<EventDetails> {
-    const model = genAI.getGenerativeModel({ model: MODEL_NAME });
-
-    const currentYear = new Date().getFullYear();
-    const prompt = `Extract event details from this image. Assume the event is in the future, using the current year (${currentYear}) or later if no year is specified. Return ONLY a JSON object with: summary, start_datetime (ISO), end_datetime (ISO, or +1hr if not found), location, and description (optional). If the image is not a clear event, set the "error" field to "UNABLE_TO_DETERMINE" but still return the JSON with any partial details or empty strings. Do not include markdown.`;
-
     try {
         const start = Date.now();
-        // Convert File to base64
-        const base64Data = await fileToGenerativePart(imageFile);
+        const base64Data = await fileToBase64(imageFile);
 
-        const result = await model.generateContent([prompt, base64Data]);
-        const response = await result.response;
-        const text = response.text();
+        const response = await fetch(AUTH_BRIDGE_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'parse',
+                image: base64Data,
+                mimeType: imageFile.type,
+            }),
+        });
 
-        // Clean up markdown code blocks if present
-        const cleanText = text.replace(MARKDOWN_JSON_REGEX, '').replace(MARKDOWN_BLOCK_REGEX, '').trim();
+        if (!response.ok) {
+            const errorText = await response.text();
+            try {
+                const parsed = JSON.parse(errorText);
+                throw new Error(parsed.message || parsed.error || `Server error: ${response.status}`);
+            } catch {
+                throw new Error(`Server error (${response.status}): ${errorText}`);
+            }
+        }
 
-        console.log("Gemini processing time:", Date.now() - start, "ms");
-        return JSON.parse(cleanText) as EventDetails;
+        const data = await response.json() as EventDetails;
+        console.log("Gemini parse response time:", Date.now() - start, "ms");
+        return data;
     } catch (error: unknown) {
         console.error("Gemini Parse Error:", error);
         const errorMessage = error instanceof Error ? error.message : String(error);
-        throw new Error(`Gemini API Error: ${errorMessage}`);
+        throw new Error(errorMessage);
     }
 }
 
-async function fileToGenerativePart(file: File): Promise<{ inlineData: { data: string; mimeType: string } }> {
+async function fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => {
             const base64String = (reader.result as string).split(',')[1];
-            resolve({
-                inlineData: {
-                    data: base64String,
-                    mimeType: file.type,
-                },
-            });
+            resolve(base64String);
         };
         reader.onerror = reject;
         reader.readAsDataURL(file);

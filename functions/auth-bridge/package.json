@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "description": "Backend bridge for Google OAuth and Gemini image parsing",
   "main": "index.js",
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
     "@google/generative-ai": "^0.24.1",
     "google-auth-library": "^9.15.1"

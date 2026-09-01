@@ -26,9 +26,9 @@ jobs:
 
       - name: Deploy Cloud Function
         run: |
-          gcloud functions deploy authBridge \
+          gcloud functions deploy auth-bridge \
             --gen2 \
-            --runtime=nodejs20 \
+            --runtime=nodejs22 \
             --region=europe-west1 \
             --source=./functions/auth-bridge \
             --entry-point=authBridge \

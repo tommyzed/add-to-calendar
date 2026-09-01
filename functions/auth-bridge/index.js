@@ -4,7 +4,7 @@ const { GoogleGenerativeAI } = require('@google/generative-ai');
 const MARKDOWN_JSON_REGEX = /```json/g;
 const MARKDOWN_BLOCK_REGEX = /```/g;
 
-exports.authBridge = async (req, res) => {
+const authBridge = async (req, res) => {
   const allowedOrigins = [
     'https://add-to-calendar.up.railway.app',
     'https://add-to-calendar-dev.up.railway.app',
@@ -98,3 +98,6 @@ exports.authBridge = async (req, res) => {
     return res.status(500).json({ error: e.message || 'Server Error' });
   }
 };
+
+exports.authBridge = authBridge;
+exports['auth-bridge'] = authBridge;

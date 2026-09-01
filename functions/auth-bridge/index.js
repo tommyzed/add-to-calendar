@@ -58,7 +58,7 @@ const authBridge = async (req, res) => {
       }
 
       const apiKey = process.env.GEMINI_APP_KEY || process.env.GEMINI_API_KEY;
-      const modelName = process.env.GEMINI_MODEL || 'gemini-1.5-flash';
+      const modelName = process.env.GEMINI_MODEL || 'gemini-3.7-flash';
 
       if (!apiKey) {
         console.error('Missing GEMINI_APP_KEY environment variable');

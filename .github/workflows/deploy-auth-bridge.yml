@@ -1,0 +1,37 @@
+name: Deploy auth-bridge Cloud Function
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'functions/auth-bridge/**'
+      - '.github/workflows/deploy-auth-bridge.yml'
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy Cloud Function
+        run: |
+          gcloud functions deploy authBridge \
+            --gen2 \
+            --runtime=nodejs20 \
+            --region=europe-west1 \
+            --source=./functions/auth-bridge \
+            --entry-point=authBridge \
+            --trigger-http \
+            --allow-unauthenticated \
+            --set-secrets="GEMINI_APP_KEY=GEMINI_APP_KEY:latest,CLIENT_ID=CLIENT_ID:latest,CLIENT_SECRET=CLIENT_SECRET:latest"

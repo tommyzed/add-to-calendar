@@ -2,7 +2,7 @@
 
 A Progressive Web App (PWA) that uses **Google Gemini AI** to extract event details from screenshots (or any image) and adds them directly to your **Google Calendar**.
 
-Built with **React**, **TypeScript**, and **Vite**, featuring a modern **Glassmorphism UI** and seamless PWA integration.
+Built with **React 19**, **TypeScript**, and **Vite**, featuring a modern **Glassmorphism UI**, a secure **Cloud Run Backend Bridge**, and seamless PWA integration.
 
 ## 🌐 Demo
 
@@ -14,20 +14,42 @@ _(NOTE: message me to be allowlisted)_
 
 ## ✨ Features
 
-- **AI-Powered Extraction**: Uses Gemini 3.1 Pro to intelligently parse event titles, dates, times, and locations from images.
+- **AI-Powered Extraction**: Uses Google Gemini to intelligently parse event titles, dates, times, and locations from images.
+- **Secure Backend Proxy Architecture**:
+  - Gemini API calls are securely routed through a Cloud Run backend (`auth-bridge`).
+  - Secret keys (`GEMINI_APP_KEY`, `CLIENT_SECRET`) remain strictly server-side in Google Secret Manager and are **never** exposed to client-side browser bundles.
 - **Seamless Google Calendar Integration**:
-  - **Persistent Authentication**: Stays logged in so you don't have to sign in every time.
+  - **Persistent Authentication**: Stays logged in with secure OAuth 2.0 token refresh.
   - **Direct Insertion**: Adds events directly to your primary calendar.
   - **View Link**: Provides a direct link to view the created event in Google Calendar.
 - **Modern User Experience**:
-  - **Glassmorphism Design**: Sleek, dark-mode-inspired UI with blur effects and gradients.
+  - **Warm Sunset Palette**: Golden amber, warm orange, and terracotta design tailored for calendar scheduling.
+  - **Glassmorphism Design**: Sleek UI with frosted blur effects, responsive typography, and high contrast.
   - **Editable Details**: Review and modify the event summary, location, and start/end times before adding.
-  - **Manual Entry**: Click the link to bypass image uploading entirely and create events manually!
-  - **Custom Date Picker**: Fully styled, modern `@mui/x-date-pickers` for responsive, intuitive time adjustments.
-  - **Smart Feedback**: Confetti animations on success, inline error handling, and graceful warnings for unclear images.
+  - **Manual Entry**: Bypass image uploading entirely and create events manually.
+  - **Custom Date Picker**: Fully styled, responsive `@mui/x-date-pickers` for intuitive time adjustments.
+  - **Smart Feedback**: Confetti animations on success, high-contrast error cards, and warnings for unclear images.
 - **PWA Capabilities**:
-  - **Installable**: Can be installed on mobile and desktop.
+  - **Installable**: Can be installed on mobile (iOS/Android) and desktop.
   - **Share Target**: Receive images directly from the Android System Share Sheet (e.g., share a screenshot from Google Photos directly to this app).
+
+## 🏗️ Architecture
+
+```text
+add-to-calendar/
+├── src/                      # Frontend PWA (React 19, Vite, MUI)
+│   ├── App.tsx               # Main application component & layout
+│   └── services/
+│       ├── calendar.ts       # Google Calendar API & OAuth client
+│       └── gemini.ts         # Image processing client (calls auth-bridge)
+├── functions/
+│   └── auth-bridge/          # Cloud Run Backend Service (Node.js 22)
+│       ├── index.js          # OAuth token exchange/refresh & Gemini parser
+│       └── package.json      # Backend dependencies
+└── .github/
+    └── workflows/
+        └── deploy-auth-bridge.yml # Automated CI/CD for Cloud Run backend
+```
 
 ## 🚀 Setup & Installation
 
@@ -35,7 +57,7 @@ _(NOTE: message me to be allowlisted)_
 
 - Node.js (v18+)
 - A Google Cloud Project with the **Google Calendar API** enabled.
-- An API Key for **Google Gemini** (Vertex AI or AI Studio).
+- A **Google Gemini API Key** (from Google AI Studio or Vertex AI).
 
 ### 1. Clone & Install
 
@@ -47,20 +69,25 @@ npm install
 
 ### 2. Environment Configuration
 
+#### Frontend Configuration (`.env`)
 Create a `.env` file in the root directory:
 
 ```env
-# Your Google Gemini API Key
-GEMINI_APP_KEY=your_gemini_api_key
-
-# The Gemini Model to use
-GEMINI_MODEL=gemini-3-flash-preview
-
 # Your Google OAuth 2.0 Client ID (for Calendar access)
 GOOGLE_CLIENT_ID=your_google_client_id.apps.googleusercontent.com
+
+# (Optional) Backend Bridge URL (defaults to production Cloud Run URL)
+AUTH_BRIDGE_URL=your_google_cloud_function_url
 ```
 
 > **Note**: For `GOOGLE_CLIENT_ID`, ensure your Google Cloud Console "Authorized JavaScript origins" includes `http://localhost:5173` (for dev) and your production URL.
+
+#### Backend Secrets (`functions/auth-bridge`)
+The backend service uses Google Secret Manager for sensitive keys:
+- `GEMINI_APP_KEY`: Your Google Gemini API Key.
+- `CLIENT_ID`: Your Google OAuth 2.0 Client ID.
+- `CLIENT_SECRET`: Your Google OAuth 2.0 Client Secret.
+- `GEMINI_MODEL`: Your Google Gemini Model (e.g., 'gemini-3.7-flash').
 
 ### 3. Run Locally
 
@@ -72,31 +99,46 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 ## 📱 How to Use
 
-1.  **Sign In**: Click "Sign In with Google" to authorize Calendar access (only needed once).
-2.  **Add an Image or Enter Manually**:
-    *   **Desktop/Mobile Web**: Click "Choose Image" to select a screenshot, or click "Or enter manually ✍️".
-    *   **Android (PWA)**: Open an image in your gallery -> Share -> Select "Add to Calendar".
-3.  **Review & Edit**: The AI will populate the event details.
-    *   Use the **Date Pickers** to adjust times if needed.
-    *   Edit the **Name** or **Location**.
-4.  **Add**: Click "Add to Calendar".
-5.  **Success**: You'll see a confirmation! Click "View in Calendar" to verify or "Scan Another" to continue.
+1. **Sign In**: Click "Sign In with Google" to authorize Calendar access (only needed once).
+2. **Add an Image or Enter Manually**:
+   - **Desktop/Mobile Web**: Click "Choose Image" to select a screenshot, or click "Or enter manually ✍️".
+   - **Android (PWA)**: Open an image in your gallery &rarr; Share &rarr; Select "Add to Calendar".
+3. **Review & Edit**: The AI populates the event details.
+   - Use the **Date Pickers** to adjust dates and times.
+   - Edit the **Name** or **Location**.
+4. **Add**: Click "Add to Calendar".
+5. **Success**: Confetti triggers! Click "View in Calendar" to inspect or "Scan Another" to continue.
 
 ## 🛠️ Technologies
 
 - **Frontend**: React 19, TypeScript, Vite
-- **AI**: Google Gemini API (`@google/generative-ai`)
-- **Integration**: Google Identity Services (GIS), Google API Client (GAPI)
+- **Backend / Proxy**: Google Cloud Run (Node.js 22 LTS, Functions Framework)
+- **AI**: Google Gemini API via server-side `@google/generative-ai`
+- **Integration**: Google Identity Services (GIS), Google API Client (GAPI), Google Auth Library
 - **UI Libraries**: `@mui/x-date-pickers`, `@mui/material`, `dayjs`, `canvas-confetti`
 - **Styling**: Vanilla CSS (Variables, Flexbox, Glassmorphism)
+- **CI/CD**: GitHub Actions (`gcloud run deploy` with path filtering)
 
 ## 📦 Deployment
 
-This app is static and can be deployed to any static host (Vercel, Netlify, Github Pages).
-
-**Important**: For the PWA "Share Target" to work on Android, the app **must be served over HTTPS**.
+### Frontend PWA
+The frontend builds to static files and can be deployed to any static host (Railway, Vercel, Netlify, Cloudflare Pages):
 
 ```bash
 npm run build
 # Deploy the 'dist' folder
+```
+
+**Important**: For the PWA "Share Target" to work on Android, the app **must be served over HTTPS**.
+
+### Backend Cloud Run (`auth-bridge`)
+The backend automatically deploys via GitHub Actions when changes are pushed to `functions/auth-bridge/**`:
+
+```bash
+# Manual deployment command:
+gcloud run deploy auth-bridge \
+  --region=europe-west1 \
+  --source=./functions/auth-bridge \
+  --allow-unauthenticated \
+  --set-secrets="GEMINI_APP_KEY=GEMINI_APP_KEY:latest,CLIENT_ID=CLIENT_ID:latest,CLIENT_SECRET=CLIENT_SECRET:latest"
 ```

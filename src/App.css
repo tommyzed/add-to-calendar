@@ -47,16 +47,47 @@
   border-color: rgba(255, 255, 255, 0.4);
 }
 
-.card.warning-card {
-  padding: 0.8em 1.2em;
-  display: inline-block;
-  min-width: unset;
+.card.error-card {
+  padding: 1em 1.5em;
+  background: rgba(35, 12, 12, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid #f87171;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  border-radius: 16px;
   margin-bottom: 1em;
 }
 
-.warning-card p {
+.error-text {
+  color: #ffffff !important;
+  font-weight: 600;
+  font-size: 0.95em;
   margin: 0;
-  font-size: 0.9em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5em;
+}
+
+.card.warning-card {
+  padding: 1em 1.5em;
+  background: rgba(35, 25, 10, 0.94);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1.5px solid #fde047;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.45);
+  border-radius: 16px;
+  margin-bottom: 1em;
+}
+
+.warning-card p,
+.warning-text {
+  color: #ffffff !important;
+  font-weight: 600;
+  margin: 0;
+  font-size: 0.95em;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.6);
 }
 
 .success-text {
@@ -180,6 +211,12 @@
   box-sizing: border-box;
   /* Ensure padding doesn't overflow width */
   transition: all 0.2s ease;
+}
+
+.input-group input::placeholder {
+  color: rgba(255, 255, 255, 0.65);
+  font-style: italic;
+  opacity: 1;
 }
 
 .input-group input:focus {

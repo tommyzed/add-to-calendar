@@ -27,6 +27,11 @@ const muiTheme = createTheme({
           '& fieldset': { borderColor: 'rgba(255, 255, 255, 0.1)' },
           '&:hover fieldset': { borderColor: 'rgba(255, 255, 255, 0.3)' },
           '&.Mui-focused fieldset': { borderColor: '#f59e0b', borderWidth: '1px' },
+          '& input::placeholder': {
+            color: 'rgba(255, 255, 255, 0.65)',
+            opacity: 1,
+            fontStyle: 'italic',
+          }
         },
         input: {
           padding: '12px 14px',
@@ -324,16 +329,16 @@ function App() {
           ) : null}
 
           {/* Show Error if any */}
-          {status.startsWith('Error') && (
-            <div className="card" style={{ borderColor: '#ff6b6b', backgroundColor: 'rgba(255, 107, 107, 0.1)' }}>
-              <p style={{ color: '#ff6b6b', fontWeight: 'bold' }}>{status}</p>
+          {(status.startsWith('Error') || status.startsWith('Could not') || status.startsWith('Auth Failed') || status.startsWith('Init Error')) && (
+            <div className="card error-card">
+              <p className="error-text">⚠️ {status}</p>
             </div>
           )}
 
           {/* Show Warning if any */}
           {(status.startsWith('Warning') || status.startsWith('🧙')) && (
-            <div className="card warning-card" style={{ borderColor: '#fca5a5', backgroundColor: 'rgba(255, 166, 0, 0.15)' }}>
-              <p style={{ color: '#fbbf24', fontWeight: 'bold' }}>{status}</p>
+            <div className="card warning-card">
+              <p className="warning-text">{status}</p>
             </div>
           )}
 
@@ -372,6 +377,7 @@ function App() {
                   value={eventDetails.summary}
                   onChange={handleSummaryChange}
                   disabled={!!createdEventLink}
+                  placeholder="Add event title"
                 />
               </div>
 

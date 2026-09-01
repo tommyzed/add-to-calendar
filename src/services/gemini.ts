@@ -1,9 +1,14 @@
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-const API_KEY = process.env.GEMINI_APP_KEY;
 const MODEL_NAME = process.env.GEMINI_MODEL || "gemini-1.5-flash";
 
-const genAI = new GoogleGenerativeAI(API_KEY);
+function getApiKey(): string {
+    const key = localStorage.getItem('GEMINI_APP_KEY');
+    if (!key) {
+        throw new Error("Gemini API Key is missing. Please provide a valid API key.");
+    }
+    return key;
+}
 
 export interface EventDetails {
     summary: string;
@@ -18,6 +23,8 @@ const MARKDOWN_JSON_REGEX = /```json/g;
 const MARKDOWN_BLOCK_REGEX = /```/g;
 
 export async function parseImage(imageFile: File): Promise<EventDetails> {
+    const apiKey = getApiKey();
+    const genAI = new GoogleGenerativeAI(apiKey);
     const model = genAI.getGenerativeModel({ model: MODEL_NAME });
 
     const currentYear = new Date().getFullYear();

@@ -1,4 +1,4 @@
-name: Deploy auth-bridge Cloud Function
+name: Deploy auth-bridge Cloud Run Service
 
 on:
   push:
@@ -24,14 +24,10 @@ jobs:
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Deploy Cloud Function
+      - name: Deploy to Cloud Run
         run: |
-          gcloud functions deploy auth-bridge \
-            --gen2 \
-            --runtime=nodejs22 \
+          gcloud run deploy auth-bridge \
             --region=europe-west1 \
             --source=./functions/auth-bridge \
-            --entry-point=authBridge \
-            --trigger-http \
             --allow-unauthenticated \
             --set-secrets="GEMINI_APP_KEY=GEMINI_APP_KEY:latest,CLIENT_ID=CLIENT_ID:latest,CLIENT_SECRET=CLIENT_SECRET:latest"

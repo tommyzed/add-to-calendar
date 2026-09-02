@@ -17,7 +17,13 @@ _(NOTE: message me to be allowlisted)_
 - **AI-Powered Extraction**: Uses Google Gemini to intelligently parse event titles, dates, times, and locations from images.
 - **Secure Backend Proxy Architecture**:
   - Gemini API calls are securely routed through a Cloud Run backend (`auth-bridge`).
-  - Secret keys (`GEMINI_APP_KEY`, `CLIENT_SECRET`) remain strictly server-side in Google Secret Manager and are **never** exposed to client-side browser bundles.
+  - Secret keys (`GEMINI_APP_KEY`, `CLIENT_SECRET`, etc.) remain strictly server-side in Google Secret Manager and are **never** exposed to client-side browser bundles.
+- **Cloud Image Storage & Attendee Sharing (v2.0)**:
+  - **Zero-Latency Concurrent Uploads**: Uploads source images to Google Cloud Storage (GCS) in parallel with Gemini AI analysis.
+  - **Attendee-Accessible Hyperlinks**: Adds a clean HTML hyperlink (`📸 View Event Image`) to the calendar event description so all attendees can view the original screenshot.
+  - **Automated 90-Day TTL**: GCS bucket lifecycle rules automatically purge old images, keeping maintenance and storage costs near zero.
+  - **In-App Source Preview**: Inspect the uploaded screenshot via a convenient preview pill in the review card before adding to Calendar.
+  - **Branded Event Footer**: Includes an interactive link to Add to Calendar in event descriptions.
 - **Seamless Google Calendar Integration**:
   - **Persistent Authentication**: Stays logged in with secure OAuth 2.0 token refresh.
   - **Direct Insertion**: Adds events directly to your primary calendar.
@@ -44,11 +50,11 @@ add-to-calendar/
 │       └── gemini.ts         # Image processing client (calls auth-bridge)
 ├── functions/
 │   └── auth-bridge/          # Cloud Run Backend Service (Node.js 22)
-│       ├── index.js          # OAuth token exchange/refresh & Gemini parser
-│       └── package.json      # Backend dependencies
+│       ├── index.js          # OAuth token exchange/refresh, Gemini parser & GCS uploader
+│       └── package.json      # Backend dependencies (@google-cloud/storage, @google/generative-ai)
 └── .github/
     └── workflows/
-        └── deploy-auth-bridge.yml # Automated CI/CD for Cloud Run backend
+        └── deploy-auth-bridge.yml # Automated CI/CD for Cloud Run backend (Node 24 actions)
 ```
 
 ## 🚀 Setup & Installation
@@ -88,6 +94,7 @@ The backend service uses Google Secret Manager for sensitive keys:
 - `CLIENT_ID`: Your Google OAuth 2.0 Client ID.
 - `CLIENT_SECRET`: Your Google OAuth 2.0 Client Secret.
 - `GEMINI_MODEL`: Your Google Gemini Model (e.g., 'gemini-3.7-flash').
+- `IMAGE_BUCKET_NAME`: Your Google Cloud Storage bucket name (e.g., 'add-to-calendar-images').
 
 ### 3. Run Locally
 
@@ -114,10 +121,11 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 - **Frontend**: React 19, TypeScript, Vite
 - **Backend / Proxy**: Google Cloud Run (Node.js 22 LTS, Functions Framework)
 - **AI**: Google Gemini API via server-side `@google/generative-ai`
+- **Storage**: Google Cloud Storage (`@google-cloud/storage`) with 90-day automated TTL lifecycle
 - **Integration**: Google Identity Services (GIS), Google API Client (GAPI), Google Auth Library
 - **UI Libraries**: `@mui/x-date-pickers`, `@mui/material`, `dayjs`, `canvas-confetti`
 - **Styling**: Vanilla CSS (Variables, Flexbox, Glassmorphism)
-- **CI/CD**: GitHub Actions (`gcloud run deploy` with path filtering)
+- **CI/CD**: GitHub Actions (`gcloud run deploy` with Node 24 actions and path filtering)
 
 ## 📦 Deployment
 
@@ -140,5 +148,5 @@ gcloud run deploy auth-bridge \
   --region=europe-west1 \
   --source=./functions/auth-bridge \
   --allow-unauthenticated \
-  --set-secrets="GEMINI_APP_KEY=GEMINI_APP_KEY:latest,CLIENT_ID=CLIENT_ID:latest,CLIENT_SECRET=CLIENT_SECRET:latest"
+  --set-secrets="GEMINI_APP_KEY=GEMINI_APP_KEY:latest,CLIENT_ID=CLIENT_ID:latest,CLIENT_SECRET=CLIENT_SECRET:latest,GEMINI_MODEL=GEMINI_MODEL:latest,IMAGE_BUCKET_NAME=IMAGE_BUCKET_NAME:latest"
 ```

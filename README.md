@@ -6,11 +6,7 @@ Built with **React 19**, **TypeScript**, and **Vite**, featuring a modern **Glas
 
 ## 🌐 Demo
 
-[**Try the App Live**](https://add-to-calendar.egodevnull.com/)
-
-_(NOTE: message me to be allowlisted)_
-
-![CalDemo9-ezgif com-resize (2)](https://github.com/user-attachments/assets/afc71cae-9c1c-4ee2-9d48-b9f03f88b67a)
+* [**Try it NOW!**](https://add-to-calendar.egodevnull.com/) 
 
 ## ✨ Features
 

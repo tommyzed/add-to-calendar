@@ -274,9 +274,9 @@ export async function insertEvent(eventData: EventDetails) {
             descriptionParts.push(eventData.description.trim());
         }
         if (eventData.imageUrl) {
-            descriptionParts.push(`📸 Event Image: ${eventData.imageUrl}`);
+            descriptionParts.push(`📸 <a href="${eventData.imageUrl}">View Event Image</a>`);
         }
-        descriptionParts.push("💫✨ Imported by Add to Calendar.");
+        descriptionParts.push('💫✨ Imported by <a href="https://add-to-calendar.egodevnull.com">Add to Calendar</a>.');
 
         const event = {
             summary: eventData.summary,

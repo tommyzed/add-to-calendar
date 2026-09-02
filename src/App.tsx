@@ -171,7 +171,8 @@ function App() {
             location: details.location || '',
             start_datetime: details.start_datetime || new Date().toISOString(),
             end_datetime: details.end_datetime || new Date(Date.now() + 3600000).toISOString(),
-            description: details.description || ''
+            description: details.description || '',
+            imageUrl: details.imageUrl
           });
         } else {
           // Hard error
@@ -370,6 +371,32 @@ function App() {
             <div className="card event-preview">
               <h2>{createdEventLink ? 'Event Created!' : (eventDetails.summary === '' && eventDetails.location === '' ? 'Manual Entry' : 'Confirm Event')}</h2>
 
+              {eventDetails.imageUrl && (
+                <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
+                  <a
+                    href={eventDetails.imageUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      display: 'inline-flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '5px 14px',
+                      background: 'rgba(245, 158, 11, 0.15)',
+                      border: '1px solid rgba(245, 158, 11, 0.35)',
+                      borderRadius: '20px',
+                      color: '#fbbf24',
+                      textDecoration: 'none',
+                      fontSize: '0.85rem',
+                      fontWeight: 500,
+                    }}
+                  >
+                    <span>🖼️ Source Image</span>
+                    <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>(view)</span>
+                  </a>
+                </div>
+              )}
+
               <div className="input-group">
                 <label>Event Name</label>
                 <input
@@ -479,7 +506,7 @@ function App() {
               </a>
             </div>
             <span style={{ fontStyle: 'italic', fontSize: '0.8rem' }}>
-              v1.4 - Copyright © 2026 <a href="https://egodevnull.com" target="_blank" rel="noopener noreferrer" className="footer-brand-link">EGO /dev/null</a>
+              v2.0 - Copyright © 2026 <a href="https://egodevnull.com" target="_blank" rel="noopener noreferrer" className="footer-brand-link">EGO /dev/null</a>
             </span>
           </footer>
         </div>

@@ -8,6 +8,7 @@ export interface EventDetails {
     end_datetime?: string; // ISO 8601
     location?: string;
     description?: string;
+    imageUrl?: string;
     error?: string;
 }
 

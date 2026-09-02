@@ -30,4 +30,5 @@ jobs:
             --region=europe-west1 \
             --source=./functions/auth-bridge \
             --allow-unauthenticated \
-            --set-secrets="GEMINI_APP_KEY=GEMINI_APP_KEY:latest,CLIENT_ID=CLIENT_ID:latest,CLIENT_SECRET=CLIENT_SECRET:latest,GEMINI_MODEL=GEMINI_MODEL:latest"
+            --set-secrets="GEMINI_APP_KEY=GEMINI_APP_KEY:latest,CLIENT_ID=CLIENT_ID:latest,CLIENT_SECRET=CLIENT_SECRET:latest,GEMINI_MODEL=GEMINI_MODEL:latest" \
+            --update-env-vars="IMAGE_BUCKET_NAME=add-to-calendar-images"

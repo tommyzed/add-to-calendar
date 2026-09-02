@@ -269,10 +269,19 @@ export async function insertEvent(eventData: EventDetails) {
             throw new Error("Invalid end_datetime");
         }
 
+        const descriptionParts: string[] = [];
+        if (eventData.description && eventData.description.trim() !== '') {
+            descriptionParts.push(eventData.description.trim());
+        }
+        if (eventData.imageUrl) {
+            descriptionParts.push(`📸 Event Image: ${eventData.imageUrl}`);
+        }
+        descriptionParts.push("💫✨ Imported by Add to Calendar.");
+
         const event = {
             summary: eventData.summary,
             location: eventData.location,
-            description: (eventData.description ? eventData.description + "\n\n" : "") + "💫✨ Imported by Add to Calendar.",
+            description: descriptionParts.join("\n\n"),
             start: {
                 dateTime: eventData.start_datetime,
                 timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,

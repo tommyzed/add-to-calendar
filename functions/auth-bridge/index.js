@@ -1,5 +1,9 @@
+const crypto = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
+const { Storage } = require('@google-cloud/storage');
+
+const storage = new Storage();
 
 const MARKDOWN_JSON_REGEX = /```json/g;
 const MARKDOWN_BLOCK_REGEX = /```/g;
@@ -50,7 +54,7 @@ const authBridge = async (req, res) => {
       return res.status(200).json(credentials);
     }
 
-    // Action 3: Secure Gemini Screenshot Parsing
+    // Action 3: Secure Gemini Screenshot Parsing & Image Storage
     if (action === 'parse') {
       console.log('TOMOLICK: PARSE');
       if (!image) {
@@ -72,7 +76,9 @@ const authBridge = async (req, res) => {
       const prompt = `Extract event details from this image. Assume the event is in the future, using the current year (${currentYear}) or later if no year is specified. Return ONLY a JSON object with: summary, start_datetime (ISO), end_datetime (ISO, or +1hr if not found), location, and description (optional). If the image is not a clear event, set the "error" field to "UNABLE_TO_DETERMINE" but still return the JSON with any partial details or empty strings. Do not include markdown.`;
 
       const start = Date.now();
-      const result = await model.generateContent([
+
+      // 1. Kick off Gemini content generation
+      const geminiPromise = model.generateContent([
         prompt,
         {
           inlineData: {
@@ -82,12 +88,56 @@ const authBridge = async (req, res) => {
         }
       ]);
 
-      const response = await result.response;
+      // 2. Concurrently upload image to GCS if bucket is configured
+      const bucketName = process.env.IMAGE_BUCKET_NAME || process.env.STORAGE_BUCKET;
+      const uploadPromise = (async () => {
+        if (!bucketName) return null;
+        try {
+          const buffer = Buffer.from(image, 'base64');
+          const effectiveMime = mimeType || 'image/png';
+          let ext = 'png';
+          if (effectiveMime.includes('jpeg') || effectiveMime.includes('jpg')) ext = 'jpg';
+          else if (effectiveMime.includes('webp')) ext = 'webp';
+          else if (effectiveMime.includes('gif')) ext = 'gif';
+
+          const randomHex = crypto.randomBytes(6).toString('hex');
+          const filename = `events/${Date.now()}-${randomHex}.${ext}`;
+          const bucket = storage.bucket(bucketName);
+          const file = bucket.file(filename);
+
+          await file.save(buffer, {
+            contentType: effectiveMime,
+            metadata: {
+              cacheControl: 'public, max-age=7776000', // 90 days
+            },
+          });
+
+          const publicUrl = `https://storage.googleapis.com/${bucketName}/${filename}`;
+          console.log('Image successfully uploaded to GCS:', publicUrl);
+          return publicUrl;
+        } catch (uploadErr) {
+          console.error('Failed to upload image to GCS:', uploadErr);
+          return null;
+        }
+      })();
+
+      // Run Gemini parse and GCS upload concurrently
+      const [geminiResult, uploadedImageUrl] = await Promise.all([
+        geminiPromise,
+        uploadPromise
+      ]);
+
+      const response = await geminiResult.response;
       const text = response.text();
       const cleanText = text.replace(MARKDOWN_JSON_REGEX, '').replace(MARKDOWN_BLOCK_REGEX, '').trim();
 
       console.log('Gemini processing time:', Date.now() - start, 'ms');
       const eventDetails = JSON.parse(cleanText);
+
+      if (uploadedImageUrl) {
+        eventDetails.imageUrl = uploadedImageUrl;
+      }
+
       return res.status(200).json(eventDetails);
     }
 

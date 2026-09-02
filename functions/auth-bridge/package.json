@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@google-cloud/functions-framework": "^3.4.5",
+    "@google-cloud/storage": "^7.15.0",
     "@google/generative-ai": "^0.24.1",
     "google-auth-library": "^9.15.1"
   }

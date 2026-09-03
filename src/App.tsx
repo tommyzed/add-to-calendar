@@ -304,7 +304,7 @@ function App() {
             <h1 className="title">
               <span className="screenshot">Add to Calendar</span>
             </h1>
-            <p className="tagline">Turn screenshots into scheduled events instantly!</p>
+            <p className="tagline">Turn images into events instantly!</p>
           </div>
 
           <div className="header-actions">

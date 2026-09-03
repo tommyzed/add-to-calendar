@@ -140,7 +140,7 @@ async function refreshAccessToken() {
         if (!response.ok) {
             // If refresh fails (e.g., revoked), clear everything
             if (response.status === 400 || response.status === 401) {
-                signOut();
+                signOut('token_revoked');
             }
             const text = await response.text();
             try {
@@ -192,7 +192,7 @@ export async function loadToken(): Promise<boolean> {
             }
         } else {
             console.log('Stored token expired and no refresh token');
-            signOut();
+            signOut('token_expired');
         }
     } else if (refreshToken) {
         // No access token but have refresh token (unlikely but possible)
@@ -206,7 +206,8 @@ export async function loadToken(): Promise<boolean> {
     return false;
 }
 
-export function signOut() {
+export function signOut(reason = 'user_action') {
+    trackEvent('logout', { reason });
     localStorage.removeItem('gcal_access_token');
     localStorage.removeItem('gcal_expires_at');
     localStorage.removeItem('gcal_refresh_token');

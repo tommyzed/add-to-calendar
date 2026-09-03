@@ -62,6 +62,7 @@ function App() {
   const [createdEventLink, setCreatedEventLink] = useState<string | null>(null);
   const [isRestoring, setIsRestoring] = useState(true);
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showImageLightbox, setShowImageLightbox] = useState(false);
 
   useEffect(() => {
     // Start by assuming we are restoring if the flag exists
@@ -216,6 +217,7 @@ function App() {
   const handleReset = () => {
     setEventDetails(null);
     setCreatedEventLink(null);
+    setShowImageLightbox(false);
     setStatus('Ready for next.');
   };
 
@@ -235,6 +237,7 @@ function App() {
     setEventDetails(null);
     setCreatedEventLink(null);
     setShowLogoutConfirm(false);
+    setShowImageLightbox(false);
     setStatus('');
   };
 
@@ -244,6 +247,7 @@ function App() {
 
   const handleCancel = () => {
     setEventDetails(null);
+    setShowImageLightbox(false);
     setStatus('Ready for next.');
   };
 
@@ -371,33 +375,29 @@ function App() {
 
           {eventDetails && (
             <div className="card event-preview">
-              <h2>{createdEventLink ? 'Event Created!' : (eventDetails.summary === '' && eventDetails.location === '' ? 'Manual Entry' : 'Confirm Event')}</h2>
+              <div className="preview-header">
+                <h2>{createdEventLink ? 'Event Created!' : (eventDetails.summary === '' && eventDetails.location === '' ? 'Manual Entry' : 'Confirm Event')}</h2>
 
-              {eventDetails.imageUrl && (
-                <div style={{ marginBottom: '1rem', display: 'flex', justifyContent: 'center' }}>
-                  <a
-                    href={eventDetails.imageUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    style={{
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '6px',
-                      padding: '5px 14px',
-                      background: 'rgba(245, 158, 11, 0.15)',
-                      border: '1px solid rgba(245, 158, 11, 0.35)',
-                      borderRadius: '20px',
-                      color: '#fbbf24',
-                      textDecoration: 'none',
-                      fontSize: '0.85rem',
-                      fontWeight: 500,
-                    }}
+                {eventDetails.imageUrl && (
+                  <button
+                    type="button"
+                    className="thumbnail-btn"
+                    onClick={() => setShowImageLightbox(true)}
+                    title="Click to view full screenshot"
+                    aria-label="View source screenshot"
                   >
-                    <span>🖼️ Source Image</span>
-                    <span style={{ fontSize: '0.75rem', opacity: 0.8 }}>(view)</span>
-                  </a>
-                </div>
-              )}
+                    <img src={eventDetails.imageUrl} alt="Source event thumbnail" className="thumbnail-img" />
+                    <div className="thumbnail-hover-overlay">
+                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <circle cx="11" cy="11" r="8"></circle>
+                        <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+                        <line x1="11" y1="8" x2="11" y2="14"></line>
+                        <line x1="8" y1="11" x2="14" y2="11"></line>
+                      </svg>
+                    </div>
+                  </button>
+                )}
+              </div>
 
               <div className="input-group">
                 <label>Event Name</label>
@@ -469,6 +469,39 @@ function App() {
                 <div className="actions">
                   <button onClick={cancelLogout}>Cancel</button>
                   <button onClick={confirmLogout} style={{ background: 'linear-gradient(90deg, #ff6b6b 0%, #ff8e8e 100%)', color: 'white' }}>Sign Out</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {showImageLightbox && eventDetails?.imageUrl && (
+            <div className="modal-overlay lightbox-overlay" onClick={() => setShowImageLightbox(false)}>
+              <div className="lightbox-content" onClick={(e) => e.stopPropagation()}>
+                <div className="lightbox-header">
+                  <span className="lightbox-title">Source Screenshot</span>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <a
+                      href={eventDetails.imageUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="lightbox-external-link"
+                      title="Open full image in new tab"
+                    >
+                      Open ↗
+                    </a>
+                    <button
+                      type="button"
+                      className="lightbox-close-btn"
+                      onClick={() => setShowImageLightbox(false)}
+                      title="Close preview"
+                      aria-label="Close preview"
+                    >
+                      ✕
+                    </button>
+                  </div>
+                </div>
+                <div className="lightbox-image-container">
+                  <img src={eventDetails.imageUrl} alt="Source Screenshot" className="lightbox-img" />
                 </div>
               </div>
             </div>

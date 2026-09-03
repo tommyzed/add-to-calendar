@@ -34,7 +34,7 @@ const muiTheme = createTheme({
           }
         },
         input: {
-          padding: '12px 14px',
+          padding: '8.5px 12px',
         }
       },
     },
@@ -412,22 +412,22 @@ function App() {
 
               <div className="row-group" style={{ alignItems: 'flex-start' }}>
                 <div className="input-group mui-date-picker-wrapper">
-                  <label style={{ marginBottom: '8px' }}>Start</label>
+                  <label>Start</label>
                   <DateTimePicker
                     value={eventDetails.start_datetime ? dayjs(eventDetails.start_datetime) : null}
                     onChange={handleStartChange}
                     disabled={!!createdEventLink}
-                    slotProps={{ textField: { fullWidth: true, variant: 'outlined' } }}
+                    slotProps={{ textField: { fullWidth: true, variant: 'outlined', size: 'small' } }}
                   />
                 </div>
 
                 <div className="input-group mui-date-picker-wrapper">
-                  <label style={{ marginBottom: '8px' }}>End</label>
+                  <label>End</label>
                   <DateTimePicker
                     value={eventDetails.end_datetime ? dayjs(eventDetails.end_datetime) : null}
                     onChange={handleEndChange}
                     disabled={!!createdEventLink}
-                    slotProps={{ textField: { fullWidth: true, variant: 'outlined' } }}
+                    slotProps={{ textField: { fullWidth: true, variant: 'outlined', size: 'small' } }}
                   />
                 </div>
               </div>

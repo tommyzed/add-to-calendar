@@ -19,7 +19,7 @@
 .container {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 1.1rem;
 }
 
 .card {
@@ -32,6 +32,16 @@
   box-shadow: 0 8px 32px 0 rgba(120, 53, 15, 0.25);
   transition: transform 0.3s ease, opacity 0.3s ease;
   animation: fadeIn 0.5s ease-out;
+}
+
+.card.event-preview {
+  padding: 1.35rem 1.6rem;
+}
+
+@media (max-width: 600px) {
+  .card.event-preview {
+    padding: 1.1rem 1rem;
+  }
 }
 
 .card.compact-card {
@@ -160,8 +170,8 @@
 
 .actions {
   display: flex;
-  gap: 1em;
-  margin-top: 2em;
+  gap: 0.75em;
+  margin-top: 1.1rem;
   justify-content: center;
 }
 
@@ -170,29 +180,32 @@
 }
 
 .input-group {
-  margin-bottom: 0.8em;
+  margin-bottom: 0.65rem;
   text-align: left;
 }
 
 .row-group {
   display: flex;
-  gap: 1em;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.row-group .input-group {
+  flex: 1;
+  margin-bottom: 0;
 }
 
 @media (max-width: 600px) {
   .row-group {
     flex-direction: column;
+    gap: 0.55rem;
   }
-}
-
-.row-group .input-group {
-  flex: 1;
 }
 
 .input-group label {
   display: block;
-  font-size: 0.75em;
-  margin-bottom: 0.2em;
+  font-size: 0.72em;
+  margin-bottom: 0.25rem;
   color: #fef08a;
   font-weight: 600;
   text-transform: uppercase;
@@ -201,7 +214,7 @@
 
 .input-group input {
   width: 100%;
-  padding: 0.6em;
+  padding: 0.55em 0.7em;
   border-radius: 8px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   background: rgba(0, 0, 0, 0.2);
@@ -448,6 +461,15 @@ input[type="file"] {
   }
 }
 
+@media (max-width: 600px) {
+  .title {
+    margin-top: 1rem;
+  }
+  .footer {
+    margin-top: 1.25rem;
+  }
+}
+
 .footer {
   margin-top: 2rem;
   display: flex;
@@ -476,21 +498,22 @@ input[type="file"] {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 
 .preview-header h2 {
   margin: 0;
   text-align: left;
+  font-size: 1.35rem;
 }
 
 .thumbnail-btn {
   position: relative;
-  width: 46px;
-  height: 46px;
-  min-width: 46px;
+  width: 40px;
+  height: 40px;
+  min-width: 40px;
   padding: 0;
-  border-radius: 10px;
+  border-radius: 8px;
   overflow: hidden;
   border: 1.5px solid rgba(245, 158, 11, 0.4);
   background: rgba(0, 0, 0, 0.3);

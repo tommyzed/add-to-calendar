@@ -13,6 +13,8 @@
     "@google-cloud/functions-framework": "^3.4.5",
     "@google-cloud/storage": "^7.15.0",
     "@google/generative-ai": "^0.24.1",
+    "@neondatabase/serverless": "^0.10.4",
+    "geoip-lite": "^1.4.10",
     "google-auth-library": "^9.15.1"
   }
 }

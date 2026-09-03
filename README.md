@@ -4,7 +4,7 @@ A Progressive Web App (PWA) that uses **Google Gemini AI** to extract event deta
 
 Built with **React 19**, **TypeScript**, and **Vite**, featuring a modern **Glassmorphism UI**, a secure **Cloud Run Backend Bridge**, and seamless PWA integration.
 
-## 🌐 Publicly Available! (v2.0)
+## 🌐 Publicly Available! (v2.1)
 
 * [**Try it NOW!**](https://add-to-calendar.egodevnull.com/) 
 

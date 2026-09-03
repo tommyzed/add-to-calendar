@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import './App.css'
-import { initGapi, initGis, authenticate, insertEvent, loadToken, signOut } from './services/calendar';
+import { initGapi, initGis, authenticate, insertEvent, loadToken, signOut, trackEvent } from './services/calendar';
 import { parseImage, type EventDetails } from './services/gemini';
 import confetti from 'canvas-confetti';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -202,6 +202,7 @@ function App() {
         setCreatedEventLink(result.htmlLink);
       }
       confetti();
+      trackEvent('event_created', { has_image: !!eventDetails.imageUrl });
       // Keep details on screen as requested
     } catch (e: any) {
       console.error(e);
@@ -247,6 +248,7 @@ function App() {
   };
 
   const handleManualEntry = () => {
+    trackEvent('manual_entry');
     const now = new Date();
     // Default to the next full hour
     now.setMinutes(0, 0, 0);
@@ -506,7 +508,7 @@ function App() {
               </a>
             </div>
             <span style={{ fontStyle: 'italic', fontSize: '0.8rem' }}>
-              v2.0 - Copyright © 2026 <a href="https://egodevnull.com" target="_blank" rel="noopener noreferrer" className="footer-brand-link">EGO /dev/null</a>
+              v2.1 - Copyright © 2026 <a href="https://egodevnull.com" target="_blank" rel="noopener noreferrer" className="footer-brand-link">EGO /dev/null</a>
             </span>
           </footer>
         </div>

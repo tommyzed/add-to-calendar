@@ -1,3 +1,5 @@
+import { getClientContext } from './calendar';
+
 const AUTH_BRIDGE_URL = import.meta.env.DEV
     ? '/api/auth'
     : (process.env.AUTH_BRIDGE_URL || import.meta.env.VITE_AUTH_BRIDGE_URL || 'https://auth-bridge-785229654842.europe-west1.run.app');
@@ -16,6 +18,8 @@ export async function parseImage(imageFile: File): Promise<EventDetails> {
     try {
         const start = Date.now();
         const base64Data = await fileToBase64(imageFile);
+        const user_hash = localStorage.getItem('gcal_user_hash') || null;
+        const context = getClientContext();
 
         const response = await fetch(AUTH_BRIDGE_URL, {
             method: 'POST',
@@ -26,6 +30,8 @@ export async function parseImage(imageFile: File): Promise<EventDetails> {
                 action: 'parse',
                 image: base64Data,
                 mimeType: imageFile.type,
+                user_hash,
+                ...context,
             }),
         });
 

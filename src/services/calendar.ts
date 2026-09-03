@@ -7,8 +7,15 @@ import type { EventDetails } from './gemini';
 
 // Google Identity Services (GIS) and Calendar API
 
-const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
+const SCOPES = 'openid https://www.googleapis.com/auth/calendar.events';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
+
+export function getClientContext() {
+    return {
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        locale: navigator.language || '',
+    };
+}
 
 // Environment variables
 // Note: In Vite, process.env is usually replaced by import.meta.env, but we stick to the existing pattern if it works.
@@ -73,13 +80,14 @@ async function exchangeCodeForToken(code: string) {
         console.log('Using Client ID:', CLIENT_ID); // Verify this matches Cloud Function's CLIENT_ID
         // console.log('Code:', code); // Don't log full code in prod, but helpful for debug
 
+        const context = getClientContext();
         const response = await fetch(AUTH_BRIDGE_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             // Added 'action' field based on "Invalid Action" error
-            body: JSON.stringify({ action: 'exchange', code }),
+            body: JSON.stringify({ action: 'exchange', code, ...context }),
         });
 
         if (!response.ok) {
@@ -93,7 +101,11 @@ async function exchangeCodeForToken(code: string) {
         }
 
         const data = await response.json();
-        // data should contain: access_token, expires_in, refresh_token, scope, token_type
+        // data should contain: access_token, expires_in, refresh_token, scope, token_type, user_hash
+
+        if (data.user_hash) {
+            localStorage.setItem('gcal_user_hash', data.user_hash);
+        }
 
         gapi.client.setToken({ access_token: data.access_token });
         // Server returns expiry_date (ms)
@@ -114,13 +126,15 @@ async function refreshAccessToken() {
 
     try {
         console.log('Attempting to refresh access token...');
+        const user_hash = localStorage.getItem('gcal_user_hash');
+        const context = getClientContext();
         const response = await fetch(AUTH_BRIDGE_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
             },
             // Added 'action' field
-            body: JSON.stringify({ action: 'refresh', refresh_token }),
+            body: JSON.stringify({ action: 'refresh', refresh_token, user_hash, ...context }),
         });
 
         if (!response.ok) {
@@ -139,6 +153,10 @@ async function refreshAccessToken() {
 
         const data = await response.json();
         // data should contain: access_token, expires_in (and maybe validation info)
+
+        if (data.user_hash) {
+            localStorage.setItem('gcal_user_hash', data.user_hash);
+        }
 
         gapi.client.setToken({ access_token: data.access_token });
         // Update access token and expiry, keep existing refresh token
@@ -192,9 +210,32 @@ export function signOut() {
     localStorage.removeItem('gcal_access_token');
     localStorage.removeItem('gcal_expires_at');
     localStorage.removeItem('gcal_refresh_token');
+    localStorage.removeItem('gcal_user_hash');
     // Clear GAPI token
     gapi.client.setToken(null);
     console.log('User signed out, tokens cleared.');
+}
+
+export function trackEvent(eventType: string, metadata: Record<string, any> = {}) {
+    try {
+        const user_hash = localStorage.getItem('gcal_user_hash') || null;
+        const context = getClientContext();
+        fetch(AUTH_BRIDGE_URL, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                action: 'track',
+                user_hash,
+                event_type: eventType,
+                metadata,
+                ...context,
+            }),
+        }).catch(err => console.warn('Track event failed:', err));
+    } catch (e) {
+        console.warn('Track event error:', e);
+    }
 }
 
 export function initGis() {

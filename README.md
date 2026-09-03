@@ -18,8 +18,18 @@ Built with **React 19**, **TypeScript**, and **Vite**, featuring a modern **Glas
   - **Zero-Latency Concurrent Uploads**: Uploads source images to Google Cloud Storage (GCS) in parallel with Gemini AI analysis.
   - **Attendee-Accessible Hyperlinks**: Adds a clean HTML hyperlink (`📸 View Event Image`) to the calendar event description so all attendees can view the original screenshot.
   - **Automated 90-Day TTL**: GCS bucket lifecycle rules automatically purge old images, keeping maintenance and storage costs near zero.
-  - **In-App Source Preview**: Inspect the uploaded screenshot via a convenient preview pill in the review card before adding to Calendar.
   - **Branded Event Footer**: Includes an interactive link to Add to Calendar in event descriptions.
+- **Interactive Source Thumbnail & In-App Lightbox (v2.1)**:
+  - **Header Thumbnail Badge**: Embedded 40×40px clickable screenshot preview right next to the "Confirm Event" title.
+  - **In-App Lightbox Modal**: Tap the thumbnail to view the full-resolution screenshot in a sleek glassmorphic modal to cross-check dates and times without losing your place.
+  - **Direct External Tab**: Includes a one-click "Open ↗" action to view the image in a separate browser tab.
+  - **Streamlined Vertical Layout**: Eliminated compounding margins between Start and End date fields and compacted spacing for a zero/minimal-scroll confirmation screen on mobile and desktop.
+- **Anonymous Analytics & Coarse Geo-Location (v2.1)**:
+  - **Neon Postgres Serverless Integration**: Non-blocking analytics logging using `@neondatabase/serverless` over HTTPS.
+  - **100% Privacy-Preserving Identity**: Google Account IDs (`sub` claim from OAuth `id_token`) are deterministically hashed with SHA-256 (`user_hash`), enabling consistent user retention metrics without storing emails or names.
+  - **Zero-Latency In-Memory Geo-Location**: Uses `geoip-lite` to resolve client IP (`x-forwarded-for`) to country and city in microseconds, supplemented by browser timezone and locale.
+  - **Comprehensive Activity Tracking**: Tracks `login`, `refresh`, `parse_image` (with parsing latency and status), `event_created` (with image attachment flag), `manual_entry`, and `logout` (with reason: `user_action`, `token_expired`, `token_revoked`).
+  - **Zero User Overhead**: All database queries are fire-and-forget background promises that never delay user responses.
 - **Seamless Google Calendar Integration**:
   - **Persistent Authentication**: Stays logged in with secure OAuth 2.0 token refresh.
   - **Direct Insertion**: Adds events directly to your primary calendar.
@@ -40,14 +50,14 @@ Built with **React 19**, **TypeScript**, and **Vite**, featuring a modern **Glas
 ```text
 add-to-calendar/
 ├── src/                      # Frontend PWA (React 19, Vite, MUI)
-│   ├── App.tsx               # Main application component & layout
+│   ├── App.tsx               # Main UI, responsive layout & image lightbox modal
 │   └── services/
-│       ├── calendar.ts       # Google Calendar API & OAuth client
-│       └── gemini.ts         # Image processing client (calls auth-bridge)
+│       ├── calendar.ts       # Google Calendar API, OAuth & client event tracking
+│       └── gemini.ts         # Image parsing client (passes context to auth-bridge)
 ├── functions/
 │   └── auth-bridge/          # Cloud Run Backend Service (Node.js 22)
-│       ├── index.js          # OAuth token exchange/refresh, Gemini parser & GCS uploader
-│       └── package.json      # Backend dependencies (@google-cloud/storage, @google/generative-ai)
+│       ├── index.js          # OAuth, Gemini AI, GCS uploader, GeoIP & Neon logging
+│       └── package.json      # Dependencies (@neondatabase/serverless, geoip-lite, etc.)
 └── .github/
     └── workflows/
         └── deploy-auth-bridge.yml # Automated CI/CD for Cloud Run backend (Node 24 actions)
@@ -91,6 +101,7 @@ The backend service uses Google Secret Manager for sensitive keys:
 - `CLIENT_SECRET`: Your Google OAuth 2.0 Client Secret.
 - `GEMINI_MODEL`: Your Google Gemini Model (e.g., 'gemini-3.7-flash').
 - `IMAGE_BUCKET_NAME`: Your Google Cloud Storage bucket name (e.g., 'add-to-calendar-images').
+- `DATABASE_URL`: Your Neon Postgres serverless connection string (`postgresql://...`).
 
 ### 3. Run Locally
 
@@ -116,6 +127,8 @@ Open [http://localhost:5173](http://localhost:5173) in your browser.
 
 - **Frontend**: React 19, TypeScript, Vite
 - **Backend / Proxy**: Google Cloud Run (Node.js 22 LTS, Functions Framework)
+- **Database**: Neon Postgres Serverless (`@neondatabase/serverless`)
+- **Geo-Location**: `geoip-lite` (in-memory IP lookup) + client context (browser timezone, locale)
 - **AI**: Google Gemini API via server-side `@google/generative-ai`
 - **Storage**: Google Cloud Storage (`@google-cloud/storage`) with 90-day automated TTL lifecycle
 - **Integration**: Google Identity Services (GIS), Google API Client (GAPI), Google Auth Library
@@ -144,5 +157,52 @@ gcloud run deploy auth-bridge \
   --region=europe-west1 \
   --source=./functions/auth-bridge \
   --allow-unauthenticated \
-  --set-secrets="GEMINI_APP_KEY=GEMINI_APP_KEY:latest,CLIENT_ID=CLIENT_ID:latest,CLIENT_SECRET=CLIENT_SECRET:latest,GEMINI_MODEL=GEMINI_MODEL:latest,IMAGE_BUCKET_NAME=IMAGE_BUCKET_NAME:latest"
+  --set-secrets="GEMINI_APP_KEY=GEMINI_APP_KEY:latest,CLIENT_ID=CLIENT_ID:latest,CLIENT_SECRET=CLIENT_SECRET:latest,GEMINI_MODEL=GEMINI_MODEL:latest,IMAGE_BUCKET_NAME=IMAGE_BUCKET_NAME:latest,DATABASE_URL=DATABASE_URL:latest"
+```
+
+## 📊 Analytics & Insights (v2.1)
+
+All analytics are stored in **Neon Postgres** with complete user privacy (Google IDs are hashed with SHA-256 and coarse location is resolved in-memory).
+
+### Sample SQL Queries for Neon SQL Editor
+
+```sql
+-- 1. Active users, location, and lifetime events created
+SELECT 
+    user_id, 
+    country, 
+    city, 
+    timezone, 
+    login_count, 
+    events_created_count, 
+    last_seen_at 
+FROM users 
+ORDER BY last_seen_at DESC;
+
+-- 2. Daily breakdown by event type
+SELECT 
+    DATE(created_at) AS date,
+    event_type, 
+    COUNT(*) AS total_events
+FROM analytics_events 
+GROUP BY date, event_type 
+ORDER BY date DESC, total_events DESC;
+
+-- 3. Top countries using the app
+SELECT 
+    country, 
+    COUNT(DISTINCT user_id) AS total_users,
+    COUNT(*) AS total_events
+FROM analytics_events 
+WHERE country IS NOT NULL 
+GROUP BY country 
+ORDER BY total_events DESC;
+
+-- 4. Gemini AI image parsing performance & status
+SELECT 
+    AVG((metadata->>'duration_ms')::numeric) AS avg_duration_ms,
+    COUNT(*) AS total_parses,
+    COUNT(*) FILTER (WHERE metadata->>'status' = 'success') AS success_count
+FROM analytics_events 
+WHERE event_type = 'parse_image';
 ```

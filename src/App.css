@@ -493,6 +493,35 @@ input[type="file"] {
   text-shadow: 0 0 8px rgba(253, 224, 71, 0.7);
 }
 
+.footer-social-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.footer-social-link {
+  color: inherit;
+  display: flex;
+  align-items: center;
+}
+
+.footer-legal-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.8rem;
+}
+
+.footer-legal-link {
+  color: inherit;
+  text-decoration: underline;
+}
+
+.footer-copyright {
+  font-style: italic;
+  font-size: 0.8rem;
+}
+
 /* Event Preview Header with Thumbnail */
 .preview-header {
   display: flex;

@@ -508,13 +508,13 @@ function App() {
           )}
 
           <footer className="footer">
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <a href="https://www.linkedin.com/in/tomolick/" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', display: 'flex', alignItems: 'center' }} aria-label="LinkedIn">
+            <div className="footer-social-links">
+              <a href="https://www.linkedin.com/in/tomolick/" target="_blank" rel="noopener noreferrer" className="footer-social-link" aria-label="LinkedIn">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z" />
                 </svg>
               </a>
-              <a href="https://egodevnull.com" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', display: 'flex', alignItems: 'center' }} aria-label="Ego /dev/null">
+              <a href="https://egodevnull.com" target="_blank" rel="noopener noreferrer" className="footer-social-link" aria-label="Ego /dev/null">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24">
                   <defs>
                     <mask id="eo-mask">
@@ -531,16 +531,16 @@ function App() {
                 </svg>
               </a>
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.8rem' }}>
-              <a href="/privacy.html" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
+            <div className="footer-legal-links">
+              <a href="/privacy.html" target="_blank" rel="noopener noreferrer" className="footer-legal-link">
                 Privacy Policy
               </a>
               <span>&bull;</span>
-              <a href="/terms.html" target="_blank" rel="noopener noreferrer" style={{ color: 'inherit', textDecoration: 'underline' }}>
+              <a href="/terms.html" target="_blank" rel="noopener noreferrer" className="footer-legal-link">
                 Terms of Service
               </a>
             </div>
-            <span style={{ fontStyle: 'italic', fontSize: '0.8rem' }}>
+            <span className="footer-copyright">
               v2.1 - Copyright © 2026 <a href="https://egodevnull.com" target="_blank" rel="noopener noreferrer" className="footer-brand-link">EGO /dev/null</a>
             </span>
           </footer>

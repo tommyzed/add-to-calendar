@@ -221,19 +221,28 @@ export function trackEvent(eventType: string, metadata: Record<string, any> = {}
     try {
         const user_hash = localStorage.getItem('gcal_user_hash') || null;
         const context = getClientContext();
-        fetch(AUTH_BRIDGE_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'track',
-                user_hash,
-                event_type: eventType,
-                metadata,
-                ...context,
-            }),
-        }).catch(err => console.warn('Track event failed:', err));
+
+        const payload = JSON.stringify({
+            action: 'track',
+            user_hash,
+            event_type: eventType,
+            metadata,
+            ...context,
+        });
+
+        if (navigator.sendBeacon) {
+            const blob = new Blob([payload], { type: 'application/json' });
+            navigator.sendBeacon(AUTH_BRIDGE_URL, blob);
+        } else {
+            fetch(AUTH_BRIDGE_URL, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: payload,
+                keepalive: true,
+            }).catch(err => console.warn('Track event failed:', err));
+        }
     } catch (e) {
         console.warn('Track event error:', e);
     }

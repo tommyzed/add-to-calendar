@@ -64,6 +64,32 @@ function App() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showImageLightbox, setShowImageLightbox] = useState(false);
 
+  const handleSharedContent = useCallback(async () => {
+    try {
+      if ('caches' in window) {
+        const cache = await caches.open('share-target');
+        const response = await cache.match('shared-file');
+        if (response) {
+          const blob = await response.blob();
+          const file = new File([blob], "shared_image.png", { type: blob.type });
+          processFile(file);
+
+          // Clean up cache to prevent reprocessing on reload
+          await cache.delete('shared-file');
+
+          // Clean up URL to prevent triggering again
+          const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
+          window.history.replaceState({ path: newUrl }, '', newUrl);
+        } else {
+          setStatus('No shared file found in cache.');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      setStatus('Error retrieving shared file.');
+    }
+  }, []);
+
   useEffect(() => {
     // Start by assuming we are restoring if the flag exists
     const hasAuthFlag = localStorage.getItem('gcal_authed') === 'true';
@@ -115,33 +141,7 @@ function App() {
         setStatus(`Init Error: ${err}`);
         setIsRestoring(false);
       });
-  }, []);
-
-  const handleSharedContent = async () => {
-    try {
-      if ('caches' in window) {
-        const cache = await caches.open('share-target');
-        const response = await cache.match('shared-file');
-        if (response) {
-          const blob = await response.blob();
-          const file = new File([blob], "shared_image.png", { type: blob.type });
-          processFile(file);
-
-          // Clean up cache to prevent reprocessing on reload
-          await cache.delete('shared-file');
-
-          // Clean up URL to prevent triggering again
-          const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-          window.history.replaceState({ path: newUrl }, '', newUrl);
-        } else {
-          setStatus('No shared file found in cache.');
-        }
-      }
-    } catch (e) {
-      console.error(e);
-      setStatus('Error retrieving shared file.');
-    }
-  };
+  }, [handleSharedContent]);
 
   const handleAuth = async () => {
     try {
@@ -185,8 +185,12 @@ function App() {
         setEventDetails(details);
         setStatus('Event parsed! Confirm to add.');
       }
-    } catch (e: any) {
-      setStatus(`Error parsing: ${e.message}`);
+    } catch (e: unknown) {
+      if (e instanceof Error) {
+        setStatus(`Error parsing: ${e.message}`);
+      } else {
+        setStatus(`Error parsing: ${String(e)}`);
+      }
     } finally {
       setProcessing(false);
     }
@@ -199,15 +203,23 @@ function App() {
     try {
       const result = await insertEvent(eventDetails);
       setStatus('Event Added Successfully!');
-      if (result.htmlLink) {
-        setCreatedEventLink(result.htmlLink);
+      if (result && typeof result === 'object' && 'htmlLink' in result) {
+        setCreatedEventLink(result.htmlLink as string);
       }
       confetti();
       trackEvent('event_created', { has_image: !!eventDetails.imageUrl });
       // Keep details on screen as requested
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      const msg = e.result?.error?.message || e.message || JSON.stringify(e);
+      let msg = JSON.stringify(e);
+      if (typeof e === 'object' && e !== null && 'result' in e) {
+        const errObj = e as { result?: { error?: { message?: string } } };
+        if (errObj.result?.error?.message) {
+          msg = errObj.result.error.message;
+        }
+      } else if (e instanceof Error) {
+        msg = e.message;
+      }
       setStatus(`Error adding event: ${msg}`);
     } finally {
       setProcessing(false);
@@ -274,29 +286,29 @@ function App() {
   };
 
   const handleSummaryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEventDetails((prev: any) => ({ ...prev, summary: e.target.value }));
+    setEventDetails(prev => prev ? ({ ...prev, summary: e.target.value }) : null);
   }, []);
 
   const handleLocationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEventDetails((prev: any) => ({ ...prev, location: e.target.value }));
+    setEventDetails(prev => prev ? ({ ...prev, location: e.target.value }) : null);
   }, []);
 
   const handleStartChange = useCallback((newValue: Dayjs | null) => {
     if (newValue) {
-      setEventDetails((prev: any) => ({
+      setEventDetails(prev => prev ? ({
         ...prev,
         start_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss'),
         end_datetime: newValue.add(1, 'hour').format('YYYY-MM-DDTHH:mm:ss')
-      }));
+      }) : null);
     }
   }, []);
 
   const handleEndChange = useCallback((newValue: Dayjs | null) => {
     if (newValue) {
-      setEventDetails((prev: any) => ({
+      setEventDetails(prev => prev ? ({
         ...prev,
         end_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss')
-      }));
+      }) : null);
     }
   }, []);
 

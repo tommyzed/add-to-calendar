@@ -16,9 +16,37 @@ function getDb() {
   return sql;
 }
 
+const isPrivateIp = (ip) => {
+  return /^(::f{4}:)?(10\.|192\.168\.|172\.(1[6-9]|2[0-9]|3[0-1])\.|127\.)|^::1$|^fd|^fc/i.test(ip);
+};
+
 function getClientGeo(req) {
-  const forwarded = req.headers['x-forwarded-for'];
-  const rawIp = forwarded ? forwarded.split(',')[0].trim() : (req.socket?.remoteAddress || '');
+  let rawIp = req.headers['cf-connecting-ip'] ||
+              req.headers['x-real-ip'] ||
+              req.headers['x-client-ip'] ||
+              req.headers['fastly-client-ip'];
+
+  if (!rawIp) {
+    const forwarded = req.headers['x-forwarded-for'];
+    if (forwarded) {
+      const ips = forwarded.split(',').map(ip => ip.trim()).filter(Boolean);
+      // Read from right to left, skip private IPs (proxies)
+      for (let i = ips.length - 1; i >= 0; i--) {
+        if (!isPrivateIp(ips[i])) {
+          rawIp = ips[i];
+          break;
+        }
+      }
+      if (!rawIp && ips.length > 0) {
+        rawIp = ips[ips.length - 1]; // Fallback to rightmost if all are private
+      }
+    }
+  }
+
+  if (!rawIp) {
+    rawIp = req.socket?.remoteAddress || '';
+  }
+
   const geo = geoip.lookup(rawIp);
   return {
     country: geo?.country || null,

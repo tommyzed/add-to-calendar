@@ -56,18 +56,20 @@ async function logEvent(userId, eventType, metadata = {}, geo = {}) {
     const timezone = geo.timezone || null;
     const locale = geo.locale || null;
 
+    const queries = [];
+
     // 1. Append into analytics_events
-    await db`
+    queries.push(db`
       INSERT INTO analytics_events (user_id, event_type, country, city, metadata)
       VALUES (${effectiveUserId}, ${eventType}, ${country}, ${city}, ${metaJson});
-    `;
+    `);
 
     // 2. Upsert user if identified
     if (effectiveUserId !== 'anonymous') {
       const isLogin = eventType === 'login' ? 1 : 0;
       const isEventCreated = eventType === 'event_created' ? 1 : 0;
 
-      await db`
+      queries.push(db`
         INSERT INTO users (user_id, first_seen_at, last_seen_at, login_count, events_created_count, country, city, timezone, locale)
         VALUES (${effectiveUserId}, NOW(), NOW(), ${isLogin}, ${isEventCreated}, ${country}, ${city}, ${timezone}, ${locale})
         ON CONFLICT (user_id) DO UPDATE SET
@@ -78,8 +80,10 @@ async function logEvent(userId, eventType, metadata = {}, geo = {}) {
           city = COALESCE(${city}, users.city),
           timezone = COALESCE(${timezone}, users.timezone),
           locale = COALESCE(${locale}, users.locale);
-      `;
+      `);
     }
+
+    await Promise.all(queries);
   } catch (err) {
     console.error('Analytics logEvent error:', err.message);
   }
@@ -122,7 +126,7 @@ const authBridge = async (req, res) => {
       const computedUserHash = hashGoogleId(sub);
       const geo = getClientGeo(req);
 
-      logEvent(computedUserHash, 'login', { method: 'oauth_exchange' }, geo).catch(console.error);
+      await logEvent(computedUserHash, 'login', { method: 'oauth_exchange' }, geo);
 
       return res.status(200).json({
         ...tokens,
@@ -144,7 +148,7 @@ const authBridge = async (req, res) => {
       const computedUserHash = hashGoogleId(sub) || user_hash || null;
       const geo = getClientGeo(req);
 
-      logEvent(computedUserHash, 'refresh', { method: 'token_refresh' }, geo).catch(console.error);
+      await logEvent(computedUserHash, 'refresh', { method: 'token_refresh' }, geo);
 
       return res.status(200).json({
         ...credentials,
@@ -239,11 +243,11 @@ const authBridge = async (req, res) => {
 
       // Log parse event with geo and latency
       const geo = getClientGeo(req);
-      logEvent(user_hash, 'parse_image', {
+      await logEvent(user_hash, 'parse_image', {
         duration_ms: durationMs,
         has_image_url: !!uploadedImageUrl,
         status: eventDetails.error ? 'unclear_event' : 'success'
-      }, geo).catch(console.error);
+      }, geo);
 
       return res.status(200).json(eventDetails);
     }

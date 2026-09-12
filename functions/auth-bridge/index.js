@@ -159,6 +159,22 @@ const authBridge = async (req, res) => {
         return res.status(400).json({ error: 'Missing image data' });
       }
 
+      if (typeof image !== 'string') {
+        return res.status(400).json({ error: 'Invalid image format: must be a base64 string' });
+      }
+
+      // Base64 string length roughly corresponds to 4/3 of the file size.
+      // 10MB = 10 * 1024 * 1024 bytes = 10485760 bytes.
+      // Max base64 string length roughly 10485760 * 4/3 = ~13981013 characters.
+      // We set a safe limit of 14,000,000 characters.
+      const MAX_IMAGE_LENGTH = 14000000;
+      if (image.length > MAX_IMAGE_LENGTH) {
+        return res.status(413).json({ error: 'Payload Too Large: image data exceeds the 10MB limit' });
+      }
+
+      const ALLOWED_MIME_TYPES = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+      const effectiveMime = mimeType && ALLOWED_MIME_TYPES.includes(mimeType.toLowerCase()) ? mimeType.toLowerCase() : 'image/png';
+
       const apiKey = process.env.GEMINI_APP_KEY || process.env.GEMINI_API_KEY;
       const modelName = process.env.GEMINI_MODEL || 'gemini-3.7-flash';
 
@@ -181,7 +197,7 @@ const authBridge = async (req, res) => {
         {
           inlineData: {
             data: image,
-            mimeType: mimeType || 'image/png'
+            mimeType: effectiveMime
           }
         }
       ]);
@@ -192,7 +208,6 @@ const authBridge = async (req, res) => {
         if (!bucketName) return null;
         try {
           const buffer = Buffer.from(image, 'base64');
-          const effectiveMime = mimeType || 'image/png';
           let ext = 'png';
           if (effectiveMime.includes('jpeg') || effectiveMime.includes('jpg')) ext = 'jpg';
           else if (effectiveMime.includes('webp')) ext = 'webp';

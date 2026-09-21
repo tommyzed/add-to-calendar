@@ -95,7 +95,7 @@ async function exchangeCodeForToken(code: string) {
             try {
                 const error = JSON.parse(text);
                 throw new Error(error.message || 'Failed to exchange code');
-            } catch (e) {
+            } catch {
                 throw new Error(`Server Error: ${text}`);
             }
         }
@@ -140,13 +140,13 @@ async function refreshAccessToken() {
         if (!response.ok) {
             // If refresh fails (e.g., revoked), clear everything
             if (response.status === 400 || response.status === 401) {
-                signOut('token_revoked');
+                signOut();
             }
             const text = await response.text();
             try {
                 const error = JSON.parse(text);
                 throw new Error(error.message || 'Failed to refresh token');
-            } catch (e) {
+            } catch {
                 throw new Error(`Server Error: ${text}`);
             }
         }
@@ -192,22 +192,21 @@ export async function loadToken(): Promise<boolean> {
             }
         } else {
             console.log('Stored token expired and no refresh token');
-            signOut('token_expired');
+            signOut();
         }
     } else if (refreshToken) {
         // No access token but have refresh token (unlikely but possible)
         try {
             await refreshAccessToken();
             return true;
-        } catch (e) {
+        } catch {
             return false;
         }
     }
     return false;
 }
 
-export function signOut(reason = 'user_action') {
-    trackEvent('logout', { reason });
+export function signOut() {
     localStorage.removeItem('gcal_access_token');
     localStorage.removeItem('gcal_expires_at');
     localStorage.removeItem('gcal_refresh_token');
@@ -217,27 +216,6 @@ export function signOut(reason = 'user_action') {
     console.log('User signed out, tokens cleared.');
 }
 
-export function trackEvent(eventType: string, metadata: Record<string, any> = {}) {
-    try {
-        const user_hash = localStorage.getItem('gcal_user_hash') || null;
-        const context = getClientContext();
-        fetch(AUTH_BRIDGE_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                action: 'track',
-                user_hash,
-                event_type: eventType,
-                metadata,
-                ...context,
-            }),
-        }).catch(err => console.warn('Track event failed:', err));
-    } catch (e) {
-        console.warn('Track event error:', e);
-    }
-}
 
 export function initGis() {
     return new Promise<void>((resolve, reject) => {
@@ -341,10 +319,11 @@ export async function insertEvent(eventData: EventDetails) {
 
         const response = await request;
         return response.result;
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Error inserting event", err);
         // If 401, maybe token expired during use? Try one retry if we wanted to be robust
-        if (err.result && err.result.error && err.result.error.code === 401) {
+        const error = err as { result?: { error?: { code?: number } } };
+        if (error.result && error.result.error && error.result.error.code === 401) {
             // Could trigger refresh here and retry, but simpler to rely on loadToken checks for now
         }
         throw err;

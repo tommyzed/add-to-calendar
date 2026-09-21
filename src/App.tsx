@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react'
 import './App.css'
-import { initGapi, initGis, authenticate, insertEvent, loadToken, signOut, trackEvent } from './services/calendar';
+import { initGapi, initGis, authenticate, insertEvent, loadToken, signOut } from './services/calendar';
 import { parseImage, type EventDetails } from './services/gemini';
 import confetti from 'canvas-confetti';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -64,6 +64,32 @@ function App() {
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showImageLightbox, setShowImageLightbox] = useState(false);
 
+  const handleSharedContent = useCallback(async () => {
+    try {
+      if ('caches' in window) {
+        const cache = await caches.open('share-target');
+        const response = await cache.match('shared-file');
+        if (response) {
+          const blob = await response.blob();
+          const file = new File([blob], "shared_image.png", { type: blob.type });
+          processFile(file);
+
+          // Clean up cache to prevent reprocessing on reload
+          await cache.delete('shared-file');
+
+          // clear URL
+          const newUrl = window.location.origin + window.location.pathname;
+          window.history.replaceState({ path: newUrl }, '', newUrl);
+        } else {
+          setStatus('No shared file found in cache.');
+        }
+      }
+    } catch (e) {
+      console.error(e);
+      setStatus('Error retrieving shared file.');
+    }
+  }, []);
+
   useEffect(() => {
     // Start by assuming we are restoring if the flag exists
     const hasAuthFlag = localStorage.getItem('gcal_authed') === 'true';
@@ -115,33 +141,8 @@ function App() {
         setStatus(`Init Error: ${err}`);
         setIsRestoring(false);
       });
-  }, []);
+  }, [handleSharedContent]);
 
-  const handleSharedContent = async () => {
-    try {
-      if ('caches' in window) {
-        const cache = await caches.open('share-target');
-        const response = await cache.match('shared-file');
-        if (response) {
-          const blob = await response.blob();
-          const file = new File([blob], "shared_image.png", { type: blob.type });
-          processFile(file);
-
-          // Clean up cache to prevent reprocessing on reload
-          await cache.delete('shared-file');
-
-          // Clean up URL to prevent triggering again
-          const newUrl = window.location.protocol + "//" + window.location.host + window.location.pathname;
-          window.history.replaceState({ path: newUrl }, '', newUrl);
-        } else {
-          setStatus('No shared file found in cache.');
-        }
-      }
-    } catch (e) {
-      console.error(e);
-      setStatus('Error retrieving shared file.');
-    }
-  };
 
   const handleAuth = async () => {
     try {
@@ -185,8 +186,9 @@ function App() {
         setEventDetails(details);
         setStatus('Event parsed! Confirm to add.');
       }
-    } catch (e: any) {
-      setStatus(`Error parsing: ${e.message}`);
+    } catch (e: unknown) {
+      const error = e as Error;
+      setStatus(`Error parsing: ${error.message || 'Unknown error'}`);
     } finally {
       setProcessing(false);
     }
@@ -203,11 +205,11 @@ function App() {
         setCreatedEventLink(result.htmlLink);
       }
       confetti();
-      trackEvent('event_created', { has_image: !!eventDetails.imageUrl });
       // Keep details on screen as requested
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      const msg = e.result?.error?.message || e.message || JSON.stringify(e);
+      const error = e as { result?: { error?: { message?: string } }, message?: string };
+      const msg = error.result?.error?.message || error.message || JSON.stringify(e);
       setStatus(`Error adding event: ${msg}`);
     } finally {
       setProcessing(false);
@@ -252,7 +254,6 @@ function App() {
   };
 
   const handleManualEntry = () => {
-    trackEvent('manual_entry');
     const now = new Date();
     // Default to the next full hour
     now.setMinutes(0, 0, 0);
@@ -274,29 +275,29 @@ function App() {
   };
 
   const handleSummaryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEventDetails((prev: any) => ({ ...prev, summary: e.target.value }));
+    setEventDetails((prev) => (prev ? { ...prev, summary: e.target.value } : null));
   }, []);
 
   const handleLocationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEventDetails((prev: any) => ({ ...prev, location: e.target.value }));
+    setEventDetails((prev) => (prev ? { ...prev, location: e.target.value } : null));
   }, []);
 
   const handleStartChange = useCallback((newValue: Dayjs | null) => {
     if (newValue) {
-      setEventDetails((prev: any) => ({
+      setEventDetails((prev) => (prev ? {
         ...prev,
         start_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss'),
         end_datetime: newValue.add(1, 'hour').format('YYYY-MM-DDTHH:mm:ss')
-      }));
+      } : null));
     }
   }, []);
 
   const handleEndChange = useCallback((newValue: Dayjs | null) => {
     if (newValue) {
-      setEventDetails((prev: any) => ({
+      setEventDetails((prev) => (prev ? {
         ...prev,
         end_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss')
-      }));
+      } : null));
     }
   }, []);
 

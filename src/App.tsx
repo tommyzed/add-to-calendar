@@ -185,8 +185,9 @@ function App() {
         setEventDetails(details);
         setStatus('Event parsed! Confirm to add.');
       }
-    } catch (e: any) {
-      setStatus(`Error parsing: ${e.message}`);
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setStatus(`Error parsing: ${msg}`);
     } finally {
       setProcessing(false);
     }
@@ -205,9 +206,24 @@ function App() {
       confetti();
       trackEvent('event_created', { has_image: !!eventDetails.imageUrl });
       // Keep details on screen as requested
-    } catch (e: any) {
+    } catch (e: unknown) {
       console.error(e);
-      const msg = e.result?.error?.message || e.message || JSON.stringify(e);
+      let msg = 'Unknown error';
+      if (e && typeof e === 'object') {
+        const errObj = e as Record<string, unknown>;
+        if (errObj.result && typeof errObj.result === 'object') {
+          const resObj = errObj.result as Record<string, unknown>;
+          if (resObj.error && typeof resObj.error === 'object') {
+            msg = (resObj.error as Record<string, unknown>).message as string;
+          }
+        }
+        if (msg === 'Unknown error' && errObj.message) {
+          msg = errObj.message as string;
+        }
+      }
+      if (msg === 'Unknown error') {
+        msg = JSON.stringify(e);
+      }
       setStatus(`Error adding event: ${msg}`);
     } finally {
       setProcessing(false);
@@ -274,29 +290,29 @@ function App() {
   };
 
   const handleSummaryChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEventDetails((prev: any) => ({ ...prev, summary: e.target.value }));
+    setEventDetails(prev => prev ? { ...prev, summary: e.target.value } : null);
   }, []);
 
   const handleLocationChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    setEventDetails((prev: any) => ({ ...prev, location: e.target.value }));
+    setEventDetails(prev => prev ? { ...prev, location: e.target.value } : null);
   }, []);
 
   const handleStartChange = useCallback((newValue: Dayjs | null) => {
     if (newValue) {
-      setEventDetails((prev: any) => ({
+      setEventDetails(prev => prev ? {
         ...prev,
         start_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss'),
         end_datetime: newValue.add(1, 'hour').format('YYYY-MM-DDTHH:mm:ss')
-      }));
+      } : null);
     }
   }, []);
 
   const handleEndChange = useCallback((newValue: Dayjs | null) => {
     if (newValue) {
-      setEventDetails((prev: any) => ({
+      setEventDetails(prev => prev ? {
         ...prev,
         end_datetime: newValue.format('YYYY-MM-DDTHH:mm:ss')
-      }));
+      } : null);
     }
   }, []);
 

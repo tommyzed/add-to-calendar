@@ -287,7 +287,7 @@ export async function authenticate() {
     });
 }
 
-export async function insertEvent(eventData: EventDetails) {
+export async function insertEvent(eventData: EventDetails, isRetry: boolean = false) {
     try {
         // Double check token validity before request
         const isAuth = await loadToken();
@@ -341,11 +341,24 @@ export async function insertEvent(eventData: EventDetails) {
 
         const response = await request;
         return response.result;
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Error inserting event", err);
         // If 401, maybe token expired during use? Try one retry if we wanted to be robust
-        if (err.result && err.result.error && err.result.error.code === 401) {
-            // Could trigger refresh here and retry, but simpler to rely on loadToken checks for now
+        if (
+            typeof err === 'object' &&
+            err !== null &&
+            'result' in err
+        ) {
+            const errRecord = err as Record<string, unknown>;
+            const result = errRecord.result as Record<string, unknown>;
+            if (result && typeof result === 'object' && 'error' in result) {
+                const errorInfo = result.error as Record<string, unknown>;
+                if (errorInfo && errorInfo.code === 401 && !isRetry) {
+                    console.log('401 Unauthorized encountered. Attempting token refresh and retry...');
+                    await refreshAccessToken();
+                    return await insertEvent(eventData, true);
+                }
+            }
         }
         throw err;
     }

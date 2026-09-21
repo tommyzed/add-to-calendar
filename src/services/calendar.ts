@@ -341,11 +341,20 @@ export async function insertEvent(eventData: EventDetails) {
 
         const response = await request;
         return response.result;
-    } catch (err: any) {
+    } catch (err: unknown) {
         console.error("Error inserting event", err);
         // If 401, maybe token expired during use? Try one retry if we wanted to be robust
-        if (err.result && err.result.error && err.result.error.code === 401) {
-            // Could trigger refresh here and retry, but simpler to rely on loadToken checks for now
+        if (typeof err === 'object' && err !== null && 'result' in err) {
+            const apiErr = err as { result?: { error?: { code?: number } } };
+            if (apiErr.result?.error?.code === 401) {
+                await loadToken(); // reload/refresh tokens robustly using existing helper
+                const request = gapi.client.calendar.events.insert({
+                    'calendarId': 'primary',
+                    'resource': event, // Use the proper event format
+                });
+                const response = await request;
+                return response.result;
+            }
         }
         throw err;
     }

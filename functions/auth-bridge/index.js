@@ -6,6 +6,11 @@ const geoip = require('geoip-lite');
 
 const storage = new Storage();
 
+let cachedGenAI = null;
+let cachedModel = null;
+let cachedApiKey = null;
+let cachedModelName = null;
+
 let sql = null;
 function getDb() {
   if (!process.env.DATABASE_URL) return null;
@@ -167,8 +172,13 @@ const authBridge = async (req, res) => {
         return res.status(500).json({ error: 'Server configuration error: missing Gemini API key' });
       }
 
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: modelName });
+      if (!cachedGenAI || cachedApiKey !== apiKey || cachedModelName !== modelName) {
+        cachedGenAI = new GoogleGenerativeAI(apiKey);
+        cachedModel = cachedGenAI.getGenerativeModel({ model: modelName });
+        cachedApiKey = apiKey;
+        cachedModelName = modelName;
+      }
+      const model = cachedModel;
 
       const currentYear = new Date().getFullYear();
       const prompt = `Extract event details from this image. Assume the event is in the future, using the current year (${currentYear}) or later if no year is specified. Return ONLY a JSON object with: summary, start_datetime (ISO), end_datetime (ISO, or +1hr if not found), location, and description (optional). If the image is not a clear event, set the "error" field to "UNABLE_TO_DETERMINE" but still return the JSON with any partial details or empty strings. Do not include markdown.`;

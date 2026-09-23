@@ -6,6 +6,18 @@ const geoip = require('geoip-lite');
 
 const storage = new Storage();
 
+let globalOAuthClient = null;
+function getOAuthClient() {
+  if (!globalOAuthClient) {
+    globalOAuthClient = new OAuth2Client(
+      process.env.CLIENT_ID,
+      process.env.CLIENT_SECRET,
+      'postmessage'
+    );
+  }
+  return globalOAuthClient;
+}
+
 let sql = null;
 function getDb() {
   if (!process.env.DATABASE_URL) return null;
@@ -112,11 +124,7 @@ const authBridge = async (req, res) => {
     // Action 1: Exchange OAuth Code for Tokens & Identify User
     if (action === 'exchange') {
       console.log('TOMOLICK: EXCHANGE');
-      const client = new OAuth2Client(
-        process.env.CLIENT_ID,
-        process.env.CLIENT_SECRET,
-        'postmessage'
-      );
+      const client = getOAuthClient();
       const { tokens } = await client.getToken(code);
       const sub = extractSubFromIdToken(tokens.id_token);
       const computedUserHash = hashGoogleId(sub);
@@ -133,13 +141,10 @@ const authBridge = async (req, res) => {
     // Action 2: Refresh Expired Access Token
     if (action === 'refresh') {
       console.log('TOMOLICK: REFRESH');
-      const client = new OAuth2Client(
-        process.env.CLIENT_ID,
-        process.env.CLIENT_SECRET,
-        'postmessage'
-      );
-      client.setCredentials({ refresh_token });
-      const { credentials } = await client.refreshAccessToken();
+      const client = getOAuthClient();
+      const { tokens: credentials } = await client.refreshToken(refresh_token);
+      credentials.refresh_token = refresh_token;
+
       const sub = extractSubFromIdToken(credentials.id_token);
       const computedUserHash = hashGoogleId(sub) || user_hash || null;
       const geo = getClientGeo(req);

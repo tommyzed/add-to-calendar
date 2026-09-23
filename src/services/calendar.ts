@@ -291,7 +291,15 @@ export async function insertEvent(eventData: EventDetails) {
             descriptionParts.push(eventData.description.trim());
         }
         if (eventData.imageUrl) {
-            descriptionParts.push(`📸 <a href="${eventData.imageUrl}">View Event Image</a>`);
+            try {
+                const url = new URL(eventData.imageUrl);
+                if (url.protocol === 'http:' || url.protocol === 'https:') {
+                    const safeUrl = encodeURI(eventData.imageUrl);
+                    descriptionParts.push(`📸 <a href="${safeUrl}">View Event Image</a>`);
+                }
+            } catch {
+                console.warn("Invalid URL ignored");
+            }
         }
         descriptionParts.push('💫✨ Imported by <a href="https://add-to-calendar.egodevnull.com">Add to Calendar</a>.');
 

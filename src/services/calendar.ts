@@ -77,8 +77,7 @@ function saveTokens(access_token: string, expiry_date?: number, expires_in?: num
 async function exchangeCodeForToken(code: string) {
     try {
         console.log('Exchanging code with Bridge:', AUTH_BRIDGE_URL);
-        console.log('Using Client ID:', CLIENT_ID); // Verify this matches Cloud Function's CLIENT_ID
-        // console.log('Code:', code); // Don't log full code in prod, but helpful for debug
+        console.log('Using Client ID:', CLIENT_ID);
 
         const context = getClientContext();
         const response = await fetch(AUTH_BRIDGE_URL, {
@@ -86,7 +85,6 @@ async function exchangeCodeForToken(code: string) {
             headers: {
                 'Content-Type': 'application/json',
             },
-            // Added 'action' field based on "Invalid Action" error
             body: JSON.stringify({ action: 'exchange', code, ...context }),
         });
 
@@ -133,7 +131,6 @@ async function refreshAccessToken() {
             headers: {
                 'Content-Type': 'application/json',
             },
-            // Added 'action' field
             body: JSON.stringify({ action: 'refresh', refresh_token, user_hash, ...context }),
         });
 
@@ -232,7 +229,7 @@ export function initGis() {
                         return;
                     }
 
-                    // Exchange code for code
+                    // Exchange code for token
                     exchangeCodeForToken(resp.code)
                         .then(() => {
                             if (tokenResolver) tokenResolver();

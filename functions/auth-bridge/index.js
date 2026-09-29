@@ -28,9 +28,41 @@ function getDb() {
   return sql;
 }
 
+function isPrivateIp(ip) {
+  if (!ip) return true;
+  if (/^(::f{4}:)?10\./i.test(ip)) return true;
+  if (/^(::f{4}:)?192\.168\./i.test(ip)) return true;
+  if (/^(::f{4}:)?172\.(1[6-9]|2[0-9]|3[0-1])\./i.test(ip)) return true;
+  if (/^(::f{4}:)?127\./i.test(ip)) return true;
+  if (/^(::f{4}:)?169\.254\./i.test(ip)) return true;
+  if (/^f[cd][0-9a-f]{2}:/i.test(ip)) return true;
+  if (/^fe80:/i.test(ip)) return true;
+  if (/^::1$/i.test(ip)) return true;
+  if (/^::$/i.test(ip)) return true;
+  return false;
+}
+
 function getClientGeo(req) {
-  const forwarded = req.headers['x-forwarded-for'];
-  const rawIp = forwarded ? forwarded.split(',')[0].trim() : (req.socket?.remoteAddress || '');
+  let rawIp = '';
+
+  if (req.headers['cf-connecting-ip']) {
+    rawIp = req.headers['cf-connecting-ip'].split(',')[0].trim();
+  } else if (req.headers['x-real-ip']) {
+    rawIp = req.headers['x-real-ip'].split(',')[0].trim();
+  } else if (req.headers['x-forwarded-for']) {
+    const ips = req.headers['x-forwarded-for'].split(',').map(ip => ip.trim());
+    for (let i = ips.length - 1; i >= 0; i--) {
+      if (!isPrivateIp(ips[i])) {
+        rawIp = ips[i];
+        break;
+      }
+    }
+  }
+
+  if (!rawIp) {
+    rawIp = req.ip || req.socket?.remoteAddress || '';
+  }
+
   const geo = geoip.lookup(rawIp);
   return {
     country: geo?.country || null,

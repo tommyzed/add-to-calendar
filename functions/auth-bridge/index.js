@@ -100,6 +100,10 @@ async function logEvent(userId, eventType, metadata = {}, geo = {}) {
 const MARKDOWN_JSON_REGEX = /```json/g;
 const MARKDOWN_BLOCK_REGEX = /```/g;
 
+let cachedGeminiModel = null;
+let cachedGeminiApiKey = null;
+let cachedGeminiModelName = null;
+
 const authBridge = async (req, res) => {
   const allowedOrigins = [
     'https://add-to-calendar.up.railway.app',
@@ -172,8 +176,14 @@ const authBridge = async (req, res) => {
         return res.status(500).json({ error: 'Server configuration error: missing Gemini API key' });
       }
 
-      const genAI = new GoogleGenerativeAI(apiKey);
-      const model = genAI.getGenerativeModel({ model: modelName });
+      if (!cachedGeminiModel || cachedGeminiApiKey !== apiKey || cachedGeminiModelName !== modelName) {
+        const genAI = new GoogleGenerativeAI(apiKey);
+        cachedGeminiModel = genAI.getGenerativeModel({ model: modelName });
+        cachedGeminiApiKey = apiKey;
+        cachedGeminiModelName = modelName;
+      }
+
+      const model = cachedGeminiModel;
 
       const currentYear = new Date().getFullYear();
       const prompt = `Extract event details from this image. Assume the event is in the future, using the current year (${currentYear}) or later if no year is specified. Return ONLY a JSON object with: summary, start_datetime (ISO), end_datetime (ISO, or +1hr if not found), location, and description (optional). If the image is not a clear event, set the "error" field to "UNABLE_TO_DETERMINE" but still return the JSON with any partial details or empty strings. Do not include markdown.`;

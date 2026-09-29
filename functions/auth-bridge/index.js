@@ -164,6 +164,12 @@ const authBridge = async (req, res) => {
         return res.status(400).json({ error: 'Missing image data' });
       }
 
+      const effectiveMime = mimeType || 'image/png';
+      const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/webp', 'image/gif'];
+      if (!allowedMimeTypes.includes(effectiveMime)) {
+        return res.status(400).json({ error: 'Invalid image mimeType' });
+      }
+
       const apiKey = process.env.GEMINI_APP_KEY || process.env.GEMINI_API_KEY;
       const modelName = process.env.GEMINI_MODEL || 'gemini-3.7-flash';
 
@@ -186,7 +192,7 @@ const authBridge = async (req, res) => {
         {
           inlineData: {
             data: image,
-            mimeType: mimeType || 'image/png'
+            mimeType: effectiveMime
           }
         }
       ]);
@@ -197,11 +203,11 @@ const authBridge = async (req, res) => {
         if (!bucketName) return null;
         try {
           const buffer = Buffer.from(image, 'base64');
-          const effectiveMime = mimeType || 'image/png';
+
           let ext = 'png';
-          if (effectiveMime.includes('jpeg') || effectiveMime.includes('jpg')) ext = 'jpg';
-          else if (effectiveMime.includes('webp')) ext = 'webp';
-          else if (effectiveMime.includes('gif')) ext = 'gif';
+          if (effectiveMime === 'image/jpeg') ext = 'jpg';
+          else if (effectiveMime === 'image/webp') ext = 'webp';
+          else if (effectiveMime === 'image/gif') ext = 'gif';
 
           const randomHex = crypto.randomBytes(6).toString('hex');
           const filename = `events/${Date.now()}-${randomHex}.${ext}`;

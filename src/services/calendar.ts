@@ -34,9 +34,10 @@ let tokenRejecter: ((reason?: unknown) => void) | null = null;
 
 export function initGapi() {
     return new Promise<void>((resolve, reject) => {
-        const script = document.createElement('script');
-        script.src = 'https://apis.google.com/js/api.js';
-        script.onload = () => {
+        const src = 'https://apis.google.com/js/api.js';
+        let script = document.querySelector<HTMLScriptElement>(`script[src="${src}"]`);
+
+        const initClient = () => {
             gapi.load('client', async () => {
                 try {
                     await gapi.client.init({
@@ -48,6 +49,20 @@ export function initGapi() {
                 }
             });
         };
+
+        if (script) {
+            if (typeof gapi !== 'undefined') {
+                initClient();
+            } else {
+                script.addEventListener('load', initClient);
+                script.addEventListener('error', reject);
+            }
+            return;
+        }
+
+        script = document.createElement('script');
+        script.src = src;
+        script.onload = initClient;
         script.onerror = reject;
         document.body.appendChild(script);
     });

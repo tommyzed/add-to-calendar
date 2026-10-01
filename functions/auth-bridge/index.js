@@ -259,7 +259,7 @@ const authBridge = async (req, res) => {
         return res.status(400).json({ error: 'Missing event_type' });
       }
       const geo = getClientGeo(req);
-      await logEvent(user_hash, event_type, metadata || {}, geo);
+      logEvent(user_hash, event_type, metadata || {}, geo).catch(console.error);
       return res.status(200).json({ ok: true });
     }
 

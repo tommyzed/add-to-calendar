@@ -216,6 +216,18 @@ export function signOut() {
 
 export function initGis() {
     return new Promise<void>((resolve, reject) => {
+        if (document.querySelector('script[src="https://accounts.google.com/gsi/client"]')) {
+            const check = () => {
+                if (codeClient) {
+                    resolve();
+                } else {
+                    setTimeout(check, 50);
+                }
+            };
+            check();
+            return;
+        }
+
         const script = document.createElement('script');
         script.src = 'https://accounts.google.com/gsi/client';
         script.onload = () => {

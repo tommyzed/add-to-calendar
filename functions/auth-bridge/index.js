@@ -168,6 +168,16 @@ const authBridge = async (req, res) => {
         return res.status(400).json({ error: 'Missing image data' });
       }
 
+      if (image.length > 10000000) {
+        return res.status(413).json({ error: 'Payload Too Large: Image exceeds size limit' });
+      }
+
+      const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'image/gif'];
+      const effectiveMime = mimeType || 'image/png';
+      if (!allowedMimeTypes.includes(effectiveMime)) {
+        return res.status(415).json({ error: 'Unsupported Media Type: Invalid image format' });
+      }
+
       const apiKey = process.env.GEMINI_APP_KEY || process.env.GEMINI_API_KEY;
       const modelName = process.env.GEMINI_MODEL || 'gemini-3.7-flash';
 
@@ -196,7 +206,7 @@ const authBridge = async (req, res) => {
         {
           inlineData: {
             data: image,
-            mimeType: mimeType || 'image/png'
+            mimeType: effectiveMime
           }
         }
       ]);
@@ -207,11 +217,10 @@ const authBridge = async (req, res) => {
         if (!bucketName) return null;
         try {
           const buffer = Buffer.from(image, 'base64');
-          const effectiveMime = mimeType || 'image/png';
           let ext = 'png';
-          if (effectiveMime.includes('jpeg') || effectiveMime.includes('jpg')) ext = 'jpg';
-          else if (effectiveMime.includes('webp')) ext = 'webp';
-          else if (effectiveMime.includes('gif')) ext = 'gif';
+          if (effectiveMime === 'image/jpeg' || effectiveMime === 'image/jpg') ext = 'jpg';
+          else if (effectiveMime === 'image/webp') ext = 'webp';
+          else if (effectiveMime === 'image/gif') ext = 'gif';
 
           const randomHex = crypto.randomBytes(6).toString('hex');
           const filename = `events/${Date.now()}-${randomHex}.${ext}`;

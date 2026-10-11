@@ -69,29 +69,35 @@ async function logEvent(userId, eventType, metadata = {}, geo = {}) {
     const locale = geo.locale || null;
 
     // 1. Append into analytics_events
-    await db`
-      INSERT INTO analytics_events (user_id, event_type, country, city, metadata)
-      VALUES (${effectiveUserId}, ${eventType}, ${country}, ${city}, ${metaJson});
-    `;
+    const promises = [
+      db`
+        INSERT INTO analytics_events (user_id, event_type, country, city, metadata)
+        VALUES (${effectiveUserId}, ${eventType}, ${country}, ${city}, ${metaJson});
+      `
+    ];
 
     // 2. Upsert user if identified
     if (effectiveUserId !== 'anonymous') {
       const isLogin = eventType === 'login' ? 1 : 0;
       const isEventCreated = eventType === 'event_created' ? 1 : 0;
 
-      await db`
-        INSERT INTO users (user_id, first_seen_at, last_seen_at, login_count, events_created_count, country, city, timezone, locale)
-        VALUES (${effectiveUserId}, NOW(), NOW(), ${isLogin}, ${isEventCreated}, ${country}, ${city}, ${timezone}, ${locale})
-        ON CONFLICT (user_id) DO UPDATE SET
-          last_seen_at = NOW(),
-          login_count = users.login_count + ${isLogin},
-          events_created_count = users.events_created_count + ${isEventCreated},
-          country = COALESCE(${country}, users.country),
-          city = COALESCE(${city}, users.city),
-          timezone = COALESCE(${timezone}, users.timezone),
-          locale = COALESCE(${locale}, users.locale);
-      `;
+      promises.push(
+        db`
+          INSERT INTO users (user_id, first_seen_at, last_seen_at, login_count, events_created_count, country, city, timezone, locale)
+          VALUES (${effectiveUserId}, NOW(), NOW(), ${isLogin}, ${isEventCreated}, ${country}, ${city}, ${timezone}, ${locale})
+          ON CONFLICT (user_id) DO UPDATE SET
+            last_seen_at = NOW(),
+            login_count = users.login_count + ${isLogin},
+            events_created_count = users.events_created_count + ${isEventCreated},
+            country = COALESCE(${country}, users.country),
+            city = COALESCE(${city}, users.city),
+            timezone = COALESCE(${timezone}, users.timezone),
+            locale = COALESCE(${locale}, users.locale);
+        `
+      );
     }
+
+    await Promise.all(promises);
   } catch (err) {
     console.error('Analytics logEvent error:', err.message);
   }

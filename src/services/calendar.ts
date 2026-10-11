@@ -10,9 +10,11 @@ import type { EventDetails } from './gemini';
 const SCOPES = 'openid https://www.googleapis.com/auth/calendar.events';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
 
+const CACHED_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
 export function getClientContext() {
     return {
-        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+        timezone: CACHED_TIMEZONE,
         locale: navigator.language || '',
     };
 }
@@ -309,11 +311,11 @@ export async function insertEvent(eventData: EventDetails) {
             description: descriptionParts.join("\n\n"),
             start: {
                 dateTime: eventData.start_datetime,
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timeZone: CACHED_TIMEZONE,
             },
             end: {
                 dateTime: eventData.end_datetime,
-                timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                timeZone: CACHED_TIMEZONE,
             },
         };
 

@@ -59,7 +59,9 @@ async function fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onloadend = () => {
-            const base64String = (reader.result as string).split(',')[1];
+            const resultStr = reader.result as string;
+            const commaIndex = resultStr.indexOf(',');
+            const base64String = commaIndex !== -1 ? resultStr.substring(commaIndex + 1) : resultStr;
             resolve(base64String);
         };
         reader.onerror = reject;

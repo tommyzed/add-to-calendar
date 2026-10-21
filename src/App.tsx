@@ -54,6 +54,22 @@ const muiTheme = createTheme({
   }
 });
 
+function getCalendarTarget(htmlLink: string): { href: string; target?: string } {
+  // Normalize www.google.com to calendar.google.com to avoid server-side 302 redirects
+  const webUrl = htmlLink.replace(/^https?:\/\/www\.google\.com\/calendar\//, 'https://calendar.google.com/calendar/');
+
+  // On Android devices, trigger an Intent to open the native Google Calendar app directly
+  const isAndroid = typeof navigator !== 'undefined' && /android/i.test(navigator.userAgent);
+  if (isAndroid) {
+    const urlWithoutScheme = webUrl.replace(/^https?:\/\//, '');
+    const intentUrl = `intent://${urlWithoutScheme}#Intent;scheme=https;package=com.google.android.calendar;S.browser_fallback_url=${encodeURIComponent(webUrl)};end`;
+    return { href: intentUrl, target: '_self' };
+  }
+
+  // Desktop / iOS: standard web URL in a new tab
+  return { href: webUrl, target: '_blank' };
+}
+
 function App() {
   const [authorized, setAuthorized] = useState(false);
   const [processing, setProcessing] = useState(false);
@@ -444,14 +460,22 @@ function App() {
               </div>
 
               <div className="actions">
-                {createdEventLink ? (
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
-                    <a href={createdEventLink} target="_blank" rel="noreferrer" style={{ width: '100%' }}>
-                      <button className="view-event-btn" style={{ width: '100%' }}>View in Calendar</button>
-                    </a>
-                    <button onClick={handleReset}>Scan Another</button>
-                  </div>
-                ) : (
+                {createdEventLink ? (() => {
+                  const { href, target } = getCalendarTarget(createdEventLink);
+                  return (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', width: '100%' }}>
+                      <a
+                        href={href}
+                        target={target}
+                        rel={target === '_blank' ? 'noopener noreferrer' : undefined}
+                        className="view-event-btn"
+                      >
+                        View in Calendar
+                      </a>
+                      <button onClick={handleReset}>Scan Another</button>
+                    </div>
+                  );
+                })() : (
                   <>
                     <button onClick={handleCancel}>Cancel</button>
                     <button onClick={handleConfirm} disabled={processing}>Add to Calendar</button>

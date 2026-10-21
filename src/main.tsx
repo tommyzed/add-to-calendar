@@ -2,6 +2,10 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { initAnalytics } from './services/analytics'
+
+// Initialize Firebase Analytics (GA4) non-blocking
+initAnalytics();
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {

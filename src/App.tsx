@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import './App.css'
 import { initGapi, initGis, authenticate, insertEvent, loadToken, signOut } from './services/calendar';
+import { trackAnalyticsEvent } from './services/analytics';
 import { parseImage, type EventDetails } from './services/gemini';
 import confetti from 'canvas-confetti';
 import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
@@ -86,6 +87,7 @@ function App() {
         const cache = await caches.open('share-target');
         const response = await cache.match('shared-file');
         if (response) {
+          trackAnalyticsEvent('share_target_received');
           const blob = await response.blob();
           const file = new File([blob], "shared_image.png", { type: blob.type });
           processFile(file);
@@ -166,6 +168,7 @@ function App() {
       setAuthorized(true);
       localStorage.setItem('gcal_authed', 'true');
       setStatus('Authorized!');
+      trackAnalyticsEvent('login', { method: 'google_oauth' });
     } catch (e) {
       setStatus(`Auth Failed: ${JSON.stringify(e)}`);
     }
@@ -175,11 +178,20 @@ function App() {
     setProcessing(true);
     setStatus('Analyzing image with Gemini...');
     setCreatedEventLink(null); // Reset link
+    const startTime = Date.now();
+    trackAnalyticsEvent('image_selected', {
+      file_size_kb: Math.round(file.size / 1024),
+      file_type: file.type || 'unknown'
+    });
     try {
       const details = await parseImage(file);
       console.log('Parsed:', details);
 
       if (details.error && details.error !== 'none') {
+        trackAnalyticsEvent('event_parsed', {
+          duration_ms: Date.now() - startTime,
+          status: details.error
+        });
         if (details.error === 'UNABLE_TO_DETERMINE') {
           // Warn user but allow manual entry
           setStatus('🧙 The AI elves are confused. Please review.');
@@ -199,11 +211,20 @@ function App() {
           return;
         }
       } else {
+        trackAnalyticsEvent('event_parsed', {
+          duration_ms: Date.now() - startTime,
+          status: 'success'
+        });
         setEventDetails(details);
         setStatus('Event parsed! Confirm to add.');
       }
     } catch (e: unknown) {
       const error = e as Error;
+      trackAnalyticsEvent('event_parsed', {
+        duration_ms: Date.now() - startTime,
+        status: 'error',
+        error_message: error.message || 'unknown'
+      });
       setStatus(`Error parsing: ${error.message || 'Unknown error'}`);
     } finally {
       setProcessing(false);
@@ -221,6 +242,10 @@ function App() {
         setCreatedEventLink(result.htmlLink);
       }
       confetti();
+      trackAnalyticsEvent('event_created', {
+        has_image: !!eventDetails.imageUrl,
+        method: eventDetails.imageUrl ? 'ai_scan' : 'manual'
+      });
       // Keep details on screen as requested
     } catch (e: unknown) {
       console.error(e);
@@ -250,6 +275,7 @@ function App() {
   };
 
   const confirmLogout = () => {
+    trackAnalyticsEvent('logout', { reason: 'user_action' });
     signOut();
     setAuthorized(false);
     setEventDetails(null);
@@ -270,6 +296,7 @@ function App() {
   };
 
   const handleManualEntry = () => {
+    trackAnalyticsEvent('manual_entry_click');
     const now = new Date();
     // Default to the next full hour
     now.setMinutes(0, 0, 0);
@@ -470,6 +497,7 @@ function App() {
                         target={target}
                         rel={target === '_blank' ? 'noopener noreferrer' : undefined}
                         className="view-event-btn"
+                        onClick={() => trackAnalyticsEvent('view_calendar_click', { platform: target === '_self' ? 'android_app' : 'desktop_web' })}
                       >
                         View in Calendar
                       </a>

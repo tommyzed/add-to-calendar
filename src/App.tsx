@@ -594,7 +594,7 @@ function App() {
               </a>
             </div>
             <span style={{ fontStyle: 'italic', fontSize: '0.8rem' }}>
-              v2.1 - Copyright © 2026 <a href="https://egodevnull.com" target="_blank" rel="noopener noreferrer" className="footer-brand-link">EGO /dev/null</a>
+              v2.2 - Copyright © 2026 <a href="https://egodevnull.com" target="_blank" rel="noopener noreferrer" className="footer-brand-link">EGO /dev/null</a>
             </span>
           </footer>
         </div>

@@ -56,7 +56,7 @@ export async function initAnalytics(): Promise<Analytics | null> {
  * Safely track an event in Firebase Analytics (GA4).
  * If Firebase is not yet configured or fails, this fails silently without interrupting the user.
  */
-export function trackAnalyticsEvent(eventName: string, params?: Record<string, any>): void {
+export function trackAnalyticsEvent(eventName: string, params?: Record<string, unknown>): void {
   try {
     if (analyticsInstance) {
       logEvent(analyticsInstance, eventName, params);

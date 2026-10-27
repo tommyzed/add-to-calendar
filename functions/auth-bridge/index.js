@@ -2,6 +2,7 @@ const crypto = require('crypto');
 const { OAuth2Client } = require('google-auth-library');
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { Storage } = require('@google-cloud/storage');
+const { neon } = require('@neondatabase/serverless');
 const geoip = require('geoip-lite');
 
 const storage = new Storage();
@@ -22,7 +23,6 @@ let sql = null;
 function getDb() {
   if (!process.env.DATABASE_URL) return null;
   if (!sql) {
-    const { neon } = require('@neondatabase/serverless');
     sql = neon(process.env.DATABASE_URL);
   }
   return sql;

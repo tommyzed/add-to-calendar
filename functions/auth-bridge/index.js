@@ -29,8 +29,7 @@ function getDb() {
 }
 
 function getClientGeo(req) {
-  const forwarded = req.headers['x-forwarded-for'];
-  const rawIp = forwarded ? forwarded.split(',')[0].trim() : (req.socket?.remoteAddress || '');
+  const rawIp = req.ip || req.socket?.remoteAddress || '';
   const geo = geoip.lookup(rawIp);
   return {
     country: geo?.country || null,

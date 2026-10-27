@@ -268,8 +268,28 @@ const authBridge = async (req, res) => {
       if (!event_type) {
         return res.status(400).json({ error: 'Missing event_type' });
       }
+
+      const authHeader = req.headers.authorization;
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(401).json({ error: 'Unauthorized: Missing or invalid Authorization header' });
+      }
+      const token = authHeader.split(' ')[1];
+
+      let effectiveUserHash = null;
+      try {
+        const client = getOAuthClient();
+        const tokenInfo = await client.getTokenInfo(token);
+        const sub = tokenInfo.sub;
+        if (!sub) {
+            return res.status(401).json({ error: 'Unauthorized: Token missing sub claim' });
+        }
+        effectiveUserHash = hashGoogleId(sub);
+      } catch (err) {
+        return res.status(401).json({ error: 'Unauthorized: Invalid token' });
+      }
+
       const geo = getClientGeo(req);
-      logEvent(user_hash, event_type, metadata || {}, geo).catch(console.error);
+      logEvent(effectiveUserHash, event_type, metadata || {}, geo).catch(console.error);
       return res.status(200).json({ ok: true });
     }
 

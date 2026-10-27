@@ -1,5 +1,8 @@
 const crypto = require('crypto');
+const util = require('util');
 const { OAuth2Client } = require('google-auth-library');
+
+const randomBytesAsync = util.promisify(crypto.randomBytes);
 const { GoogleGenerativeAI } = require('@google/generative-ai');
 const { Storage } = require('@google-cloud/storage');
 const geoip = require('geoip-lite');
@@ -213,7 +216,8 @@ const authBridge = async (req, res) => {
           else if (effectiveMime.includes('webp')) ext = 'webp';
           else if (effectiveMime.includes('gif')) ext = 'gif';
 
-          const randomHex = crypto.randomBytes(6).toString('hex');
+          const randomBuffer = await randomBytesAsync(6);
+          const randomHex = randomBuffer.toString('hex');
           const filename = `events/${Date.now()}-${randomHex}.${ext}`;
           const bucket = storage.bucket(bucketName);
           const file = bucket.file(filename);

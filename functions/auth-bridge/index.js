@@ -276,8 +276,8 @@ const authBridge = async (req, res) => {
     console.log('TOMOLICK: NO ACTION!');
     return res.status(400).send('Invalid Action');
   } catch (e) {
-    console.error('AuthBridge Error:', e);
-    return res.status(500).json({ error: e.message || 'Server Error' });
+    console.error('AuthBridge Error:', e.message);
+    return res.status(500).json({ error: 'Internal Server Error' });
   }
 };
 
